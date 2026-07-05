@@ -231,14 +231,14 @@ class GameScene extends Phaser.Scene {
 
     // === 星露谷风格地图 ===
     this.add.rectangle(WORLD_W/2,WORLD_H/2,WORLD_W,WORLD_H,0x4a8c3f);
-    for(let i=0;i<600;i++){let rx=Phaser.Math.Between(0,WORLD_W),ry=Phaser.Math.Between(0,WORLD_H);let clr=Phaser.Math.RND.pick([0x3d7a35,0x4a8c3f,0x55994a,0x60aa55,0x3a7030,0x529944]);this.add.rectangle(rx,ry,Phaser.Math.Between(1,3),Phaser.Math.Between(1,3),clr,0.6);}
-    for(let i=0;i<100;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'tree_oak').setDepth(1).setAlpha(0.65).setScale(Phaser.Math.FloatBetween(0.7,1.4));}
-    for(let i=0;i<100;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'tree_pine').setDepth(1).setAlpha(0.6).setScale(Phaser.Math.FloatBetween(0.7,1.3));}
-    for(let i=0;i<120;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'bush').setDepth(1).setAlpha(0.5).setScale(Phaser.Math.FloatBetween(0.6,1.2));}
-    for(let i=0;i<250;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'grass_tuft').setDepth(1).setAlpha(0.35).setScale(Phaser.Math.FloatBetween(0.5,1.2));}
-    for(let i=0;i<80;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'rock').setDepth(1).setAlpha(0.5).setScale(Phaser.Math.FloatBetween(0.7,1.3));}
-    for(let i=0;i<30;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'boulder').setDepth(1).setAlpha(0.45).setScale(Phaser.Math.FloatBetween(0.8,1.3));}
-    for(let i=0;i<150;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'flower').setDepth(1).setAlpha(0.5).setScale(Phaser.Math.FloatBetween(0.6,1.0));}
+    for(let i=0;i<600;i++){let rx=Phaser.Math.Between(0,WORLD_W),ry=Phaser.Math.Between(0,WORLD_H);let clr=[[0x3d7a35,0x4a8c3f,0x55994a,0x60aa55,0x3a7030,0x529944]);this.add.rectangle(rx,ry,Phaser.Math.Between(1,3),Phaser.Math.Between(1,3),clr,0.6);}
+    for(let i=0;i<100;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'tree_oak').setDepth(1).setAlpha(0.65).setScale((0.7 + Math.random() * (1.4 - 0.7)));}
+    for(let i=0;i<100;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'tree_pine').setDepth(1).setAlpha(0.6).setScale((0.7 + Math.random() * (1.3 - 0.7)));}
+    for(let i=0;i<120;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'bush').setDepth(1).setAlpha(0.5).setScale((0.6 + Math.random() * (1.2 - 0.6)));}
+    for(let i=0;i<250;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'grass_tuft').setDepth(1).setAlpha(0.35).setScale((0.5 + Math.random() * (1.2 - 0.5)));}
+    for(let i=0;i<80;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'rock').setDepth(1).setAlpha(0.5).setScale((0.7 + Math.random() * (1.3 - 0.7)));}
+    for(let i=0;i<30;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'boulder').setDepth(1).setAlpha(0.45).setScale((0.8 + Math.random() * (1.3 - 0.8)));}
+    for(let i=0;i<150;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'flower').setDepth(1).setAlpha(0.5).setScale((0.6 + Math.random() * (1.0 - 0.6)));}
     let border=this.add.graphics();
     border.lineStyle(3,0xff4444,0.5);border.strokeRect(0,0,WORLD_W,WORLD_H);
 
@@ -623,7 +623,7 @@ class GameScene extends Phaser.Scene {
     }
     if(Math.random()<0.15){
       let types=['blade','blade','speed','magnet'];
-      let t=Phaser.Math.RND.pick(types);
+      let t=types[Math.floor(Math.random()*types.length)];
       let it;
       if(t==='blade')it=this.physics.add.sprite(e.x,e.y-15,'item_blade');
       else if(t==='speed')it=this.physics.add.sprite(e.x,e.y-15,'item_speed');
@@ -642,7 +642,7 @@ class GameScene extends Phaser.Scene {
     let ix=Phaser.Math.Clamp(this.player.x+Math.cos(a)*d,60,WORLD_W-60);
     let iy=Phaser.Math.Clamp(this.player.y+Math.sin(a)*d,60,WORLD_H-60);
     let types=['blade','blade','speed','magnet'];
-    let t=Phaser.Math.RND.pick(types);
+    let t=types[Math.floor(Math.random()*types.length)];
     let it;
     if(t==='blade')it=this.physics.add.sprite(ix,iy,'item_blade');
     else if(t==='speed')it=this.physics.add.sprite(ix,iy,'item_speed');
