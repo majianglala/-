@@ -1,0 +1,662 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>柴犬飞刀传 | Shiba Blade</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1a2e;display:flex;justify-content:center;align-items:center;height:100vh;overflow:hidden;font-family:'Microsoft YaHei','PingFang SC',sans-serif}
+#game-container{position:relative;border:3px solid #3a3a5c;border-radius:12px;overflow:hidden;box-shadow:0 0 40px rgba(100,100,255,0.2)}
+#ui-overlay{position:absolute;top:0;left:0;width:100%;pointer-events:none;padding:12px 16px;display:flex;justify-content:space-between;align-items:flex-start;z-index:10}
+.ui-panel{background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px 12px;color:#fff;font-size:14px;backdrop-filter:blur(4px)}
+.ui-panel .label{color:#aaa;font-size:11px;text-transform:uppercase;letter-spacing:1px}
+.ui-panel .value{font-size:20px;font-weight:bold;margin-top:2px}
+.ui-blade-bar{width:100%;height:6px;background:rgba(255,255,255,0.15);border-radius:3px;margin-top:6px;overflow:hidden}
+.ui-blade-fill{height:100%;border-radius:3px;transition:width 0.3s}
+#game-overlay{position:absolute;top:0;left:0;width:100%;height:100%;display:none;justify-content:center;align-items:center;z-index:20;pointer-events:none}
+#game-overlay.show{display:flex}
+.overlay-box{background:rgba(0,0,0,0.85);border:2px solid rgba(255,255,255,0.2);border-radius:16px;padding:32px 40px;text-align:center;color:#fff;backdrop-filter:blur(8px)}
+.overlay-box h1{font-size:36px;margin-bottom:8px}
+.overlay-box h2{font-size:20px;color:#aaa;margin-bottom:16px;font-weight:normal}
+.overlay-box .stat{color:#ccc;margin:4px 0}
+.overlay-box button{margin-top:20px;padding:10px 28px;font-size:16px;background:#4a4aff;color:#fff;border:none;border-radius:8px;cursor:pointer;pointer-events:all}
+.overlay-box button:hover{background:#5a5aff}
+#tutorial{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.5);font-size:12px;pointer-events:none;z-index:10;text-align:center}
+</style>
+</head>
+<body>
+<div id="game-container">
+  <div id="ui-overlay">
+    <div class="ui-panel" id="panel-level">
+      <div class="label">飞刀等级</div>
+      <div class="value" id="val-level">白 Lv.1</div>
+      <div class="ui-blade-bar"><div class="ui-blade-fill" id="blade-fill" style="width:0%"></div></div>
+    </div>
+    <div class="ui-panel" id="panel-stats">
+      <div class="label">击杀 / 存活</div>
+      <div class="value" id="val-stats">0 · 0s</div>
+    </div>
+  </div>
+  <div id="game-overlay">
+    <div class="overlay-box" id="overlay-content"></div>
+  </div>
+  <div id="tutorial">WASD 移动 · 飞刀环绕自动战斗 · 收集10把同色飞刀升级 · 升到七彩击败Boss通关</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js">
+</script>
+<script>
+// ============================================================
+//  柴犬飞刀传 - Shiba Blade Legend
+// ============================================================
+
+const WORLD_W = 4000, WORLD_H = 4000;
+
+const BLADE_CONFIG = {
+  1: { name:'白',  color:0xffffff, count:1, spd:1.0, size:1.0, rgb:'#ffffff' },
+  2: { name:'黄',  color:0xffd700, count:2, spd:1.2, size:1.1, rgb:'#ffd700' },
+  3: { name:'绿',  color:0x44ff44, count:2, spd:1.4, size:1.2, rgb:'#44ff44' },
+  4: { name:'蓝',  color:0x4499ff, count:3, spd:1.6, size:1.3, rgb:'#4499ff' },
+  5: { name:'紫',  color:0xbb44ff, count:3, spd:1.8, size:1.4, rgb:'#bb44ff' },
+  6: { name:'金',  color:0xffaa00, count:4, spd:2.0, size:1.6, rgb:'#ffaa00' },
+  7: { name:'七彩',color:0xff44ff, count:5, spd:2.5, size:2.0, rgb:'#ff44ff' },
+};
+const BLADES_PER_LV = 10;
+const ORBIT_R = 55;
+
+const ENEMY_TYPES = {
+  onigiri:  { name:'饭团怪',  minLv:1, hp:1, spd:60,  size:28, blades:1, bLv:1, clr:0xffffff },
+  karasu:   { name:'手里鸦',  minLv:1, hp:1, spd:100, size:30, blades:1, bLv:1, clr:0x555555 },
+  skull:    { name:'骷髅侍',  minLv:2, hp:2, spd:80,  size:32, blades:2, bLv:2, clr:0xcccccc },
+  lantern:  { name:'灯笼鬼',  minLv:3, hp:2, spd:70,  size:34, blades:2, bLv:3, clr:0xff6644 },
+  tengu:    { name:'天狗面',  minLv:4, hp:3, spd:110, size:38, blades:3, bLv:4, clr:0xcc2222 },
+  shadow:   { name:'影柴犬',  minLv:5, hp:3, spd:130, size:40, blades:3, bLv:5, clr:0x222233 },
+};
+const ENEMY_KEYS = ['onigiri','karasu','skull','lantern','tengu','shadow'];
+
+let game;
+
+// ---- 贴图生成 ----
+function makeTextures(scene) {
+  let g,s;
+  function mkT(key,w,h,fn){g=scene.make.graphics({add:false});s={w:w,h:h};fn(g,s);g.generateTexture(key,w,h);g.destroy();}
+
+  // 柴犬 56x56
+  mkT('shiba',56,56,(g,s)=>{
+    g.fillStyle(0xe8a850);g.fillRoundedRect(8,20,36,22,10);
+    g.fillStyle(0xfff5e0);g.fillRoundedRect(16,28,20,16,8);
+    g.fillStyle(0xe8a850);g.fillCircle(28,16,14);
+    g.fillStyle(0xc88030);g.fillTriangle(14,14,8,0,20,8);g.fillTriangle(42,14,48,0,36,8);
+    g.fillStyle(0xe8c090);g.fillTriangle(15,12,11,2,19,8);g.fillTriangle(41,12,45,2,37,8);
+    g.fillStyle(0xfff5e0);g.fillEllipse(28,21,20,12);
+    g.fillStyle(0x222222);g.fillCircle(28,18,2.5);
+    g.fillStyle(0x1a1a1a);g.fillCircle(21,13,2.5);g.fillCircle(35,13,2.5);
+    g.fillStyle(0xffffff);g.fillCircle(21.5,12.2,0.8);g.fillCircle(35.5,12.2,0.8);
+    g.lineStyle(1,0x666666,0.5);g.beginPath();g.arc(28,20,4,0.2,Math.PI-0.2,false);g.strokePath();
+    g.lineStyle(4,0xc88030);g.beginPath();g.arc(46,20,10,-1.2,0.8,false);g.strokePath();
+    g.lineStyle(1,0xe8a850);g.beginPath();g.arc(46,20,8,-1.2,0.8,false);g.strokePath();
+    g.lineStyle(2.5,0x888888);g.lineBetween(14,4,14,40);
+    g.lineStyle(3,0x665544);g.lineBetween(8,4,20,4);g.lineBetween(14,0,14,8);
+    g.lineStyle(2.5,0xcccccc);g.lineBetween(14,8,14,36);
+    g.fillStyle(0xd49840);g.fillRoundedRect(8,36,10,8,3);g.fillRoundedRect(38,36,10,8,3);
+    g.fillRoundedRect(12,42,8,6,3);g.fillRoundedRect(36,42,8,6,3);
+  });
+
+  // 飞刀 (各等级)
+  for(let lv=1;lv<=7;lv++){
+    let c=BLADE_CONFIG[lv].color,sz=Math.floor(24*BLADE_CONFIG[lv].size);
+    mkT('blade_'+lv,sz,sz,(g,s)=>{
+      g.lineStyle(5,c,0.3);g.beginPath();g.arc(sz/2,sz/2,sz/2-4,0,Math.PI*2);g.strokePath();
+      g.lineStyle(3,c,0.9);
+      g.beginPath();g.moveTo(sz*0.3,sz*0.2);g.lineTo(sz*0.6,sz*0.35);
+      g.lineTo(sz*0.8,sz*0.5);g.lineTo(sz*0.7,sz*0.65);g.lineTo(sz*0.4,sz*0.75);g.strokePath();
+      g.fillStyle(c,1);g.fillTriangle(sz*0.75,sz*0.45,sz*0.9,sz*0.5,sz*0.7,sz*0.65);
+      g.fillStyle(c,0.8);g.fillCircle(sz/2,sz/2,3);
+    });
+  }
+
+  // 饭团怪 32x32
+  mkT('enemy_onigiri',32,32,(g,s)=>{
+    g.fillStyle(0xeeeeee);g.fillTriangle(16,4,4,28,28,28);
+    g.fillStyle(0x222222);g.fillRect(10,16,12,3);
+    g.fillStyle(0x222222);g.fillCircle(11,12,2);g.fillCircle(21,12,2);
+    g.fillStyle(0xddcccc);g.fillRoundedRect(6,26,6,4,2);g.fillRoundedRect(20,26,6,4,2);
+  });
+
+  // 手里鸦 32x32
+  mkT('enemy_karasu',32,32,(g,s)=>{
+    g.fillStyle(0x444444);g.fillTriangle(16,2,4,14,28,14);
+    g.fillStyle(0x333333);g.fillEllipse(16,20,18,14);
+    g.fillStyle(0x555555);g.fillTriangle(2,14,0,22,12,18);g.fillTriangle(30,14,32,22,20,18);
+    g.fillStyle(0xff2222);g.fillCircle(12,12,2.5);g.fillCircle(20,12,2.5);
+    g.fillStyle(0xff8888);g.fillCircle(12.5,11.5,1);g.fillCircle(20.5,11.5,1);
+    g.fillStyle(0xffaa00);g.fillTriangle(14,14,18,14,16,20);
+  });
+
+  // 骷髅侍 36x36
+  mkT('enemy_skull',36,36,(g,s)=>{
+    g.fillStyle(0xddddd8);g.fillCircle(18,14,12);
+    g.fillStyle(0x111118);g.fillCircle(13,13,3);g.fillCircle(23,13,3);g.fillCircle(18,17,2);
+    g.lineStyle(2,0x111118);g.lineBetween(11,21,25,21);
+    g.fillStyle(0xcccccc);g.fillRoundedRect(10,24,16,8,3);
+    g.fillStyle(0x8B7355);g.fillTriangle(2,8,34,8,18,-2);
+    g.lineStyle(2,0x6B5335);g.lineBetween(2,8,34,8);
+  });
+
+  // 灯笼鬼 38x38
+  mkT('enemy_lantern',38,38,(g,s)=>{
+    g.fillStyle(0xff4422,0.3);g.fillCircle(19,21,17);
+    g.fillStyle(0xff5533);g.fillRoundedRect(6,12,26,22,6);
+    g.fillStyle(0xffcc44,0.6);g.fillRoundedRect(10,16,18,14,4);
+    g.fillStyle(0x444444);g.fillRect(16,4,6,10);g.fillRect(16,34,6,4);
+    g.fillStyle(0x44aaff,0.5);g.fillCircle(6,30,4);g.fillCircle(32,28,4);
+  });
+
+  // 天狗面 42x42
+  mkT('enemy_tengu',42,42,(g,s)=>{
+    g.fillStyle(0xcc2222);g.fillRoundedRect(4,6,34,30,8);
+    g.fillStyle(0xaa1111);g.fillRoundedRect(24,12,16,8,4);
+    g.fillStyle(0xffcc00);g.fillCircle(14,16,4);g.fillCircle(24,14,3);
+    g.fillStyle(0x000000);g.fillCircle(14.5,16,2);g.fillCircle(24.5,14,1.5);
+    g.lineStyle(3,0x880000);g.lineBetween(6,10,24,8);g.lineBetween(30,8,38,10);
+    g.fillStyle(0x880000);g.fillRoundedRect(14,28,16,6,3);
+  });
+
+  // 影柴犬 44x44
+  mkT('enemy_shadow',44,44,(g,s)=>{
+    g.fillStyle(0x1a1a2e,0.85);g.fillRoundedRect(6,18,32,18,8);g.fillCircle(22,14,12);
+    g.fillStyle(0x151525,0.85);g.fillTriangle(12,12,8,2,18,8);g.fillTriangle(32,12,36,2,26,8);
+    g.fillStyle(0xff2222);g.fillCircle(17,12,3);g.fillCircle(27,12,3);
+    g.fillStyle(0xff8888,0.8);g.fillCircle(17.5,11,1);g.fillCircle(27.5,11,1);
+    g.fillStyle(0x333355,0.4);g.fillCircle(6,22,3);g.fillCircle(38,22,3);g.fillCircle(22,6,3);g.fillCircle(22,36,3);
+  });
+
+  // Boss 八岐大蛇 120x120
+  mkT('boss_yamata',120,120,(g,s)=>{
+    g.fillStyle(0x1a5533);g.fillCircle(60,60,40);
+    g.fillStyle(0x227744);g.fillCircle(60,60,32);
+    for(let i=0;i<8;i++){
+      let a=(i/8)*Math.PI*2-Math.PI/2;
+      let hx=60+Math.cos(a)*48,hy=60+Math.sin(a)*48;
+      g.fillStyle(0x1a6633);g.fillCircle(hx,hy,14);
+      g.fillStyle(0xff4444);g.fillCircle(hx+3,hy-3,3);g.fillCircle(hx-3,hy-3,3);
+      g.lineStyle(2,0xff2222);g.lineBetween(hx,hy+10,hx-4,hy+18);g.lineBetween(hx,hy+10,hx+4,hy+18);
+    }
+    g.fillStyle(0xffcc00);g.fillCircle(60,60,8);
+    g.fillStyle(0xff0000);g.fillCircle(60,60,4);
+  });
+
+  // 道具
+  mkT('item_blade',32,32,(g,s)=>{
+    g.fillStyle(0xffaa00,0.3);g.fillCircle(16,16,14);
+    g.fillStyle(0xffcc00);g.fillCircle(16,16,10);
+    g.fillStyle(0xffffff);g.fillCircle(16,10,3);g.fillCircle(22,14,3);g.fillCircle(10,16,3);
+  });
+  mkT('item_speed',32,32,(g,s)=>{
+    g.fillStyle(0x44aaff,0.3);g.fillCircle(16,16,14);
+    g.fillStyle(0xffdd44);g.fillTriangle(10,24,22,6,16,14);
+    g.fillStyle(0xffffff);g.fillTriangle(12,22,20,8,15,14);
+  });
+  mkT('item_magnet',32,32,(g,s)=>{
+    g.fillStyle(0xff4444,0.3);g.fillCircle(16,16,14);
+    g.fillStyle(0xff6666);g.beginPath();g.arc(16,14,10,-0.5,Math.PI+0.5,false);g.closePath();g.fillPath();
+    g.fillStyle(0xffffff);g.fillRect(8,6,16,4);g.fillRect(8,18,16,4);
+  });
+
+  // 装饰
+  mkT('tree',20,20,(g,s)=>{g.fillStyle(0x335533);g.fillCircle(10,6,6);g.fillStyle(0x554422);g.fillRect(7,10,6,10);});
+  mkT('rock',16,14,(g,s)=>{g.fillStyle(0x666666);g.fillRoundedRect(2,4,12,8,3);g.fillStyle(0x777777);g.fillRoundedRect(4,2,8,8,3);});
+}
+// ============================================================
+//  主游戏场景
+// ============================================================
+class GameScene extends Phaser.Scene {
+  constructor(){super('GameScene');}
+
+  create(){
+    this.physics.world.setBounds(0,0,WORLD_W,WORLD_H);
+    this.cameras.main.setBounds(0,0,WORLD_W,WORLD_H);
+
+    // 背景
+    this.add.rectangle(WORLD_W/2,WORLD_H/2,WORLD_W,WORLD_H,0x2d5a1e);
+    for(let i=0;i<300;i++){
+      let rx=Phaser.Math.Between(0,WORLD_W),ry=Phaser.Math.Between(0,WORLD_H);
+      this.add.rectangle(rx,ry,1,1,Phaser.Math.Between(0x2a5a1a,0x3a6a2a),0.5);
+    }
+    for(let i=0;i<80;i++){
+      let rx=Phaser.Math.Between(40,WORLD_W-40),ry=Phaser.Math.Between(40,WORLD_H-40);
+      this.add.image(rx,ry,Math.random()<0.6?'tree':'rock').setAlpha(0.4);
+    }
+    let border=this.add.graphics();
+    border.lineStyle(3,0xff4444,0.5);border.strokeRect(0,0,WORLD_W,WORLD_H);
+
+    // 生成贴图
+    makeTextures(this);
+
+    // 玩家
+    this.player=this.physics.add.sprite(WORLD_W/2,WORLD_H/2,'shiba');
+    this.player.setCollideWorldBounds(true).setDepth(10).setSize(32,32).setOffset(12,12);
+    this.cameras.main.startFollow(this.player,true,0.08,0.08);
+
+    // 状态
+    this.pLv=1;this.pBladeCnt=0;this.pAlive=true;this.ended=false;
+    this.kills=0;this.gTime=0;this.bossOut=false;this.bossDead=false;
+    this.spdBuff=0;this.magBuff=0;
+
+    // 玩家飞刀
+    this.pBlades=[];
+    this.addPBlade(1);
+
+    // 按键
+    this.keys=this.input.keyboard.addKeys({
+      up:Phaser.Input.Keyboard.KeyCodes.W,down:Phaser.Input.Keyboard.KeyCodes.S,
+      left:Phaser.Input.Keyboard.KeyCodes.A,right:Phaser.Input.Keyboard.KeyCodes.D
+    });
+
+    // 对象组
+    this.enemies=this.physics.add.group();
+    this.eBlades=this.physics.add.group();
+    this.items=this.physics.add.group();
+    this.drops=this.physics.add.group();
+
+    // 碰撞
+    this.physics.add.overlap(this.player,this.drops,this.onDrop,null,this);
+    this.physics.add.overlap(this.player,this.items,this.onItem,null,this);
+
+    // 刷怪/道具计时器
+    this.spawnCD=0;this.spawnRate=2500;this.maxEn=12;
+    this.itemCD=0;
+
+    this.updateUI();
+    this.time.delayedCall(8000,()=>{
+      let t=document.getElementById('tutorial');if(t){t.style.transition='opacity 2s';t.style.opacity='0';}
+    });
+  }
+
+  // ---- 飞刀 ----
+  addPBlade(lv){
+    let b=this.physics.add.sprite(this.player.x,this.player.y,'blade_'+lv);
+    b.setDepth(9).setData('level',lv).setData('angle',Math.random()*Math.PI*2);
+    b.body.setCircle(10);
+    this.pBlades.push(b);
+    this.redistAngle();
+  }
+  remPBlade(b){
+    let i=this.pBlades.indexOf(b);if(i>=0)this.pBlades.splice(i,1);
+    b.destroy();this.redistAngle();
+  }
+  redistAngle(){
+    let n=this.pBlades.length;if(!n)return;
+    for(let i=0;i<n;i++)this.pBlades[i].setData('angle',(i/n)*Math.PI*2);
+  }
+  rebuildBlades(){
+    for(let b of this.pBlades)b.destroy();
+    this.pBlades=[];
+    let n=BLADE_CONFIG[this.pLv].count;
+    for(let i=0;i<n;i++)this.addPBlade(this.pLv);
+  }
+
+  // ---- 敌人 ----
+  spawnEnemy(){
+    if(this.bossOut&&!this.bossDead)return;
+    if(this.enemies.getLength()>=this.maxEn)return;
+    let av=[];
+    for(let k of ENEMY_KEYS)if(ENEMY_TYPES[k].minLv<=this.pLv)av.push(k);
+    let total=0;let w=[];
+    for(let i=0;i<av.length;i++){total+=1+i*0.5;w.push(total);}
+    let r=Math.random()*total;let tk=av[0];
+    for(let i=0;i<w.length;i++){if(r<=w[i]){tk=av[i];break;}}
+    let cfg=ENEMY_TYPES[tk];
+    let d=Phaser.Math.Between(500,800);
+    let a=Math.random()*Math.PI*2;
+    let ex=Phaser.Math.Clamp(this.player.x+Math.cos(a)*d,60,WORLD_W-60);
+    let ey=Phaser.Math.Clamp(this.player.y+Math.sin(a)*d,60,WORLD_H-60);
+    let e=this.physics.add.sprite(ex,ey,'enemy_'+tk);
+    e.setDepth(5).setData('type',tk).setData('hp',cfg.hp).setData('speed',cfg.spd)
+     .setData('bladeLevel',cfg.bLv).setData('bladeCount',cfg.blades);
+    e.body.setCircle(cfg.size/2);
+    this.enemies.add(e);
+    e.setData('blades',[]);
+    for(let i=0;i<cfg.blades;i++){
+      let bl=this.physics.add.sprite(ex,ey,'blade_'+cfg.bLv);
+      bl.setDepth(4).setData('level',cfg.bLv).setData('angle',(i/cfg.blades)*Math.PI*2).setData('owner',e);
+      bl.body.setCircle(10);
+      this.eBlades.add(bl);
+      e.getData('blades').push(bl);
+    }
+  }
+
+  // ---- 收集 ----
+  onDrop(p,b){
+    let lv=b.getData('level')||1;
+    if(lv>this.pLv){
+      this.pLv=lv;this.pBladeCnt=0;this.rebuildBlades();
+      this.float('升级! '+BLADE_CONFIG[lv].name,lv);
+    }else{
+      this.pBladeCnt++;this.float('+1 '+BLADE_CONFIG[lv].name+'飞刀',lv);
+      if(this.pBladeCnt>=BLADES_PER_LV&&this.pLv<7){
+        this.pLv++;this.pBladeCnt=0;this.rebuildBlades();
+        this.float('★★ 升至 '+BLADE_CONFIG[this.pLv].name+'! ★★',this.pLv);
+        if(this.pLv>=7&&!this.bossOut)this.time.delayedCall(2000,()=>this.spawnBoss());
+      }
+    }
+    b.destroy();this.updateUI();
+  }
+  onItem(p,it){
+    let t=it.getData('type');
+    if(t==='blade'){
+      for(let i=0;i<3;i++)this.pBladeCnt++;
+      if(this.pBladeCnt>=BLADES_PER_LV&&this.pLv<7){
+        this.pLv++;this.pBladeCnt=Math.max(0,this.pBladeCnt-BLADES_PER_LV);this.rebuildBlades();
+        this.float('★★ 升至 '+BLADE_CONFIG[this.pLv].name+'! ★★',this.pLv);
+        if(this.pLv>=7&&!this.bossOut)this.time.delayedCall(2000,()=>this.spawnBoss());
+      }
+      this.float('飞刀包 +3',this.pLv);
+    }else if(t==='speed'){this.spdBuff=10000;this.float('⚡ 加速!',0x44aaff);}
+    else{this.magBuff=10000;this.float('🧲 磁铁!',0xff6666);}
+    it.destroy();this.updateUI();
+  }
+
+  // ---- Boss ----
+  spawnBoss(){
+    this.bossOut=true;
+    this.float('⚠ 最终Boss·八岐大蛇 出现! ⚠',0xff0000);
+    this.time.delayedCall(500,()=>{
+      let bx=Phaser.Math.Clamp(this.player.x+400,WORLD_W-200,WORLD_W-200);
+      let by=Phaser.Math.Clamp(this.player.y,WORLD_H-200,WORLD_H-200);
+      this.boss=this.physics.add.sprite(bx,by,'boss_yamata');
+      this.boss.setDepth(6).setData('hp',50).setData('speed',40).setData('maxHp',50);
+      this.boss.body.setCircle(55);
+      this.boss.setData('blades',[]);
+      for(let i=0;i<8;i++){
+        let bl=this.physics.add.sprite(bx,by,'blade_6');
+        bl.setDepth(5).setData('level',6).setData('angle',(i/8)*Math.PI*2).setData('owner',this.boss);
+        bl.body.setCircle(10);bl.setScale(1.5);
+        this.eBlades.add(bl);
+        this.boss.getData('blades').push(bl);
+      }
+      this.bossBar=this.add.graphics().setDepth(20);
+    });
+  }
+  killBoss(){
+    this.bossDead=true;
+    this.boss.destroy();
+    for(let b of this.boss.getData('blades'))b.destroy();
+    if(this.bossBar)this.bossBar.destroy();
+    this.float('🎉 恭喜通关! 🎉',0xffdd00);
+    this.time.delayedCall(1500,()=>this.endGame(true));
+  }
+
+  // ---- 伤害 ----
+  hurtPlayer(src){
+    if(!this.pAlive||this.ended)return;
+    if(this.pBlades.length>0){
+      let b=this.pBlades.pop();b.destroy();
+      this.float('-1 飞刀',0xff4444);
+      this.redistAngle();
+    }
+    if(this.pBlades.length===0){
+      this.pAlive=false;this.player.setTint(0xff0000);
+      this.float('💀 阵亡!',0xff0000);
+      this.time.delayedCall(1200,()=>this.endGame(false));
+    }
+    this.updateUI();
+  }
+
+  // ---- 浮动文字 ----
+  float(txt,lvOrClr){
+    let c;
+    if(typeof lvOrClr==='number'&&lvOrClr<=7)c=BLADE_CONFIG[lvOrClr].rgb;
+    else c='#'+(lvOrClr||0xffffff).toString(16).padStart(6,'0');
+    let ft=this.add.text(this.player.x,this.player.y-40,txt,{
+      fontSize:'16px',fontFamily:'Microsoft YaHei,PingFang SC,sans-serif',
+      color:c,stroke:'#000',strokeThickness:3,fontStyle:'bold'
+    }).setOrigin(0.5).setDepth(30);
+    this.tweens.add({targets:ft,y:ft.y-50,alpha:0,duration:1200,ease:'Power2',onComplete:()=>ft.destroy()});
+  }
+
+  // ---- UI ----
+  updateUI(){
+    let cfg=BLADE_CONFIG[this.pLv];
+    document.getElementById('val-level').textContent=cfg.name+' Lv.'+this.pLv;
+    let f=document.getElementById('blade-fill');
+    f.style.width=Math.min(100,(this.pBladeCnt/BLADES_PER_LV)*100)+'%';
+    f.style.backgroundColor=cfg.rgb;
+    document.getElementById('val-stats').textContent=this.kills+' · '+Math.floor(this.gTime)+'s';
+  }
+  endGame(won){
+    this.ended=true;this.physics.pause();
+    let ov=document.getElementById('game-overlay'),ct=document.getElementById('overlay-content');
+    if(won){
+      ct.innerHTML='<h1>🎉 恭喜通关!</h1><h2>柴犬成功击败八岐大蛇</h2>'
+        +'<p class="stat">击杀数: '+this.kills+'</p>'
+        +'<p class="stat">存活时间: '+Math.floor(this.gTime)+' 秒</p>'
+        +'<p class="stat">最终等级: '+BLADE_CONFIG[this.pLv].name+'</p>'
+        +'<button onclick="restartGame()">再来一局</button>';
+    }else{
+      ct.innerHTML='<h1>💀 柴犬阵亡</h1><h2>飞刀耗尽，被敌人击杀</h2>'
+        +'<p class="stat">击杀数: '+this.kills+'</p>'
+        +'<p class="stat">存活时间: '+Math.floor(this.gTime)+' 秒</p>'
+        +'<p class="stat">最终等级: '+BLADE_CONFIG[this.pLv].name+'</p>'
+        +'<button onclick="restartGame()">再来一局</button>';
+    }
+    ov.classList.add('show');
+  }
+
+  // ============================================================
+  //  主循环
+  // ============================================================
+  update(time,delta){
+    if(this.ended||!this.pAlive)return;
+    this.gTime+=delta/1000;
+    if(this.spdBuff>0)this.spdBuff-=delta;
+    if(this.magBuff>0)this.magBuff-=delta;
+
+    // 玩家移动
+    let spd=this.spdBuff>0?350:200;
+    let vx=0,vy=0;
+    if(this.keys.left.isDown)vx=-1;
+    if(this.keys.right.isDown)vx=1;
+    if(this.keys.up.isDown)vy=-1;
+    if(this.keys.down.isDown)vy=1;
+    if(vx&&vy){vx*=0.707;vy*=0.707;}
+    this.player.setVelocity(vx*spd,vy*spd);
+
+    // 玩家飞刀环绕
+    let oSpd=0.04*BLADE_CONFIG[this.pLv].spd;
+    for(let b of this.pBlades){
+      if(!b.active)continue;
+      let ang=b.getData('angle')+oSpd;
+      b.setData('angle',ang);
+      b.x=this.player.x+Math.cos(ang)*ORBIT_R;
+      b.y=this.player.y+Math.sin(ang)*ORBIT_R;
+      b.setRotation(ang+Math.PI/2);
+      b.setScale(1+Math.sin(time*0.005+ang)*0.15);
+    }
+
+    // 敌人AI + 飞刀
+    this.enemies.getChildren().forEach(e=>{
+      if(!e.active)return;
+      this.physics.moveToObject(e,this.player,e.getData('speed'));
+      let bls=e.getData('blades')||[];
+      for(let b of bls){
+        if(!b.active)continue;
+        let ang=b.getData('angle')+0.03;
+        b.setData('angle',ang);
+        b.x=e.x+Math.cos(ang)*35;
+        b.y=e.y+Math.sin(ang)*35;
+        b.setRotation(ang+Math.PI/2);
+      }
+    });
+
+    // Boss
+    if(this.boss&&this.boss.active){
+      this.physics.moveToObject(this.boss,this.player,40);
+      let bls=this.boss.getData('blades')||[];
+      for(let b of bls){
+        if(!b.active)continue;
+        let ang=b.getData('angle')+0.035;
+        b.setData('angle',ang);
+        b.x=this.boss.x+Math.cos(ang)*80;
+        b.y=this.boss.y+Math.sin(ang)*80;
+        b.setRotation(ang+Math.PI/2);
+      }
+      if(this.bossBar){
+        this.bossBar.clear();
+        let bw=80,bh=8,bx=this.boss.x-bw/2,by=this.boss.y-70;
+        this.bossBar.fillStyle(0x000000,0.6);this.bossBar.fillRect(bx-1,by-1,bw+2,bh+2);
+        this.bossBar.fillStyle(0x440000);this.bossBar.fillRect(bx,by,bw,bh);
+        let pct=this.boss.getData('hp')/this.boss.getData('maxHp');
+        this.bossBar.fillStyle(0xff2222);this.bossBar.fillRect(bx,by,bw*pct,bh);
+      }
+    }
+
+    // === 碰撞检测 ===
+
+    // 玩家飞刀 vs 敌人飞刀
+    for(let pb of this.pBlades){
+      if(!pb.active)continue;
+      let plv=pb.getData('level');
+      for(let eb of this.eBlades.getChildren()){
+        if(!eb.active)continue;
+        if(Phaser.Math.Distance.Between(pb.x,pb.y,eb.x,eb.y)<24){
+          let elv=eb.getData('level');
+          if(plv>elv){
+            let ow=eb.getData('owner');
+            if(ow&&ow.active){let a=ow.getData('blades')||[];let i=a.indexOf(eb);if(i>=0)a.splice(i,1);}
+            eb.destroy();
+          }else if(plv<elv){
+            this.remPBlade(pb);break;
+          }else{
+            let ow=eb.getData('owner');
+            if(ow&&ow.active){let a=ow.getData('blades')||[];let i=a.indexOf(eb);if(i>=0)a.splice(i,1);}
+            eb.destroy();this.remPBlade(pb);break;
+          }
+        }
+      }
+    }
+
+    // 玩家飞刀 vs 敌人本体
+    for(let pb of this.pBlades){
+      if(!pb.active)continue;
+      for(let e of this.enemies.getChildren()){
+        if(!e.active)continue;
+        if(Phaser.Math.Distance.Between(pb.x,pb.y,e.x,e.y)<30){
+          let bls=e.getData('blades')||[];
+          if(bls.length===0){
+            let hp=e.getData('hp')-1;e.setData('hp',hp);
+            if(hp<=0)this.killEnemy(e);
+          }
+        }
+      }
+    }
+    // 玩家飞刀 vs Boss
+    if(this.boss&&this.boss.active){
+      for(let pb of this.pBlades){
+        if(!pb.active)continue;
+        if(Phaser.Math.Distance.Between(pb.x,pb.y,this.boss.x,this.boss.y)<60){
+          let bls=this.boss.getData('blades')||[];
+          if(bls.length===0){
+            let hp=this.boss.getData('hp')-1;this.boss.setData('hp',hp);
+            if(hp<=0)this.killBoss();
+            this.boss.setTint(0xff6666);
+            this.time.delayedCall(100,()=>{if(this.boss&&this.boss.active)this.boss.clearTint();});
+          }
+        }
+      }
+    }
+
+    // 敌人飞刀/本体 vs 玩家
+    for(let eb of this.eBlades.getChildren()){
+      if(!eb.active)continue;
+      if(Phaser.Math.Distance.Between(eb.x,eb.y,this.player.x,this.player.y)<28)this.hurtPlayer(eb);
+    }
+    for(let e of this.enemies.getChildren()){
+      if(!e.active)continue;
+      if(Phaser.Math.Distance.Between(e.x,e.y,this.player.x,this.player.y)<28)this.hurtPlayer(e);
+    }
+    if(this.boss&&this.boss.active){
+      if(Phaser.Math.Distance.Between(this.boss.x,this.boss.y,this.player.x,this.player.y)<60)this.hurtPlayer(this.boss);
+    }
+
+    // 磁铁吸引
+    if(this.magBuff>0){
+      this.drops.getChildren().forEach(d=>{if(d.active)this.physics.moveToObject(d,this.player,300);});
+      this.items.getChildren().forEach(it=>{if(it.active)this.physics.moveToObject(it,this.player,300);});
+    }
+
+    // 刷怪
+    this.spawnCD+=delta;
+    let rate=Math.max(800,2500-this.pLv*200);
+    if(this.spawnCD>=rate){this.spawnCD=0;this.maxEn=12+this.pLv*3;this.spawnEnemy();}
+
+    // 道具刷新
+    this.itemCD+=delta;
+    if(this.itemCD>=12000){this.itemCD=0;if(Math.random()<0.5)this.spawnItem();}
+
+    if(Math.floor(this.gTime*2)%2===0)this.updateUI();
+  }
+
+  // ---- 击杀敌人 ----
+  killEnemy(e){
+    this.kills++;
+    let cfg=ENEMY_TYPES[e.getData('type')];
+    let bLv=e.getData('bladeLevel');
+    let n=Phaser.Math.Between(1,3);
+    for(let i=0;i<n;i++){
+      let d=this.physics.add.sprite(e.x+Phaser.Math.Between(-15,15),e.y+Phaser.Math.Between(-15,15),'blade_'+bLv);
+      d.setDepth(3).setData('level',bLv);d.body.setCircle(10);
+      this.drops.add(d);
+      this.time.delayedCall(15000,()=>{if(d.active)d.destroy();});
+    }
+    if(Math.random()<0.15){
+      let types=['blade','blade','speed','magnet'];
+      let t=Phaser.Math.RND.pick(types);
+      let it;
+      if(t==='blade')it=this.physics.add.sprite(e.x,e.y-15,'item_blade');
+      else if(t==='speed')it=this.physics.add.sprite(e.x,e.y-15,'item_speed');
+      else it=this.physics.add.sprite(e.x,e.y-15,'item_magnet');
+      it.setDepth(3).setData('type',t);this.items.add(it);
+      this.time.delayedCall(20000,()=>{if(it.active)it.destroy();});
+    }
+    for(let b of e.getData('blades')||[]){if(b.active)b.destroy();}
+    this.tweens.add({targets:e,alpha:0,scaleX:1.3,scaleY:1.3,duration:200,onComplete:()=>e.destroy()});
+    this.float('击杀 '+cfg.name,cfg.clr);
+  }
+
+  // ---- 道具刷新 ----
+  spawnItem(){
+    let d=Phaser.Math.Between(400,700),a=Math.random()*Math.PI*2;
+    let ix=Phaser.Math.Clamp(this.player.x+Math.cos(a)*d,60,WORLD_W-60);
+    let iy=Phaser.Math.Clamp(this.player.y+Math.sin(a)*d,60,WORLD_H-60);
+    let types=['blade','blade','speed','magnet'];
+    let t=Phaser.Math.RND.pick(types);
+    let it;
+    if(t==='blade')it=this.physics.add.sprite(ix,iy,'item_blade');
+    else if(t==='speed')it=this.physics.add.sprite(ix,iy,'item_speed');
+    else it=this.physics.add.sprite(ix,iy,'item_magnet');
+    it.setDepth(3).setData('type',t);this.items.add(it);
+    this.time.delayedCall(25000,()=>{if(it.active)it.destroy();});
+    this.tweens.add({targets:it,alpha:0.6,duration:600,yoyo:true,repeat:-1});
+  }
+}
+
+// ============================================================
+//  启动 / 重启
+// ============================================================
+function startGame(){
+  let ov=document.getElementById('game-overlay');ov.classList.remove('show');
+  let t=document.getElementById('tutorial');if(t){t.style.transition='';t.style.opacity='1';}
+  game=new Phaser.Game({
+    type:Phaser.AUTO,width:1024,height:768,
+    parent:'game-container',backgroundColor:'#1a1a2e',
+    physics:{default:'arcade',arcade:{debug:false}},
+    scene:GameScene,
+    scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH}
+  });
+}
+function restartGame(){if(game)game.destroy(true);startGame();}
+window.onload=startGame;
+</script>
+</body>
+</html>
