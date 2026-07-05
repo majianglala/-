@@ -53,7 +53,7 @@ body{background:#1a1a2e;display:flex;justify-content:center;align-items:center;h
 const WORLD_W = 4000, WORLD_H = 4000;
 
 const BLADE_CONFIG = {
-  1: { name:'白',  color:0xffffff, count:1, spd:1.0, size:1.0, rgb:'#ffffff' },
+  1: { name:'白',  color:0xffffff, count:2, spd:1.0, size:1.0, rgb:'#ffffff' },
   2: { name:'黄',  color:0xffd700, count:2, spd:1.2, size:1.1, rgb:'#ffd700' },
   3: { name:'绿',  color:0x44ff44, count:2, spd:1.4, size:1.2, rgb:'#44ff44' },
   4: { name:'蓝',  color:0x4499ff, count:3, spd:1.6, size:1.3, rgb:'#4499ff' },
@@ -205,8 +205,20 @@ function makeTextures(scene) {
 
   // 装饰
   mkT('tree',20,20,(g,s)=>{g.fillStyle(0x335533);g.fillCircle(10,6,6);g.fillStyle(0x554422);g.fillRect(7,10,6,10);});
-  mkT('rock',16,14,(g,s)=>{g.fillStyle(0x666666);g.fillRoundedRect(2,4,12,8,3);g.fillStyle(0x777777);g.fillRoundedRect(4,2,8,8,3);});
-}
+  // 橡树
+  mkT('tree_oak',28,28,(g,s)=>{g.fillStyle(0x554422);g.fillRect(12,10,4,18);g.fillStyle(0x336633);g.fillCircle(14,6,10);g.fillStyle(0x2d5d2d);g.fillCircle(10,10,8);g.fillCircle(18,10,8);g.fillStyle(0x3a7a3a);g.fillCircle(14,4,7);});
+  // 松树
+  mkT('tree_pine',24,28,(g,s)=>{g.fillStyle(0x554422);g.fillRect(10,14,4,14);g.fillStyle(0x2d5d2d);g.fillTriangle(12,0,0,16,24,16);g.fillStyle(0x336633);g.fillTriangle(12,5,3,18,21,18);g.fillStyle(0x3a7a3a);g.fillTriangle(12,10,6,20,18,20);});
+  // 灌木
+  mkT('bush',24,16,(g,s)=>{g.fillStyle(0x3a7a3a);g.fillEllipse(7,10,12,12);g.fillEllipse(17,10,12,12);g.fillStyle(0x449944);g.fillEllipse(12,6,16,10);g.fillStyle(0x55aa55,0.5);g.fillEllipse(10,4,8,6);g.fillEllipse(16,5,6,5);});
+  // 草丛
+  mkT('grass_tuft',12,8,(g,s)=>{g.fillStyle(0x448844);g.fillTriangle(6,8,2,2,10,2);g.fillStyle(0x55aa55);g.fillTriangle(6,8,4,0,8,0);g.fillStyle(0x66cc66);g.fillTriangle(6,8,6,0,8,4);});
+  // 石头
+  mkT('rock',16,14,(g,s)=>{g.fillStyle(0x777777);g.fillRoundedRect(2,4,12,8,3);g.fillStyle(0x888888);g.fillRoundedRect(4,2,8,8,3);g.fillStyle(0x999999,0.4);g.fillEllipse(6,4,2,1);});
+  // 大石
+  mkT('boulder',22,18,(g,s)=>{g.fillStyle(0x666666);g.fillRoundedRect(1,6,20,10,4);g.fillStyle(0x777777);g.fillRoundedRect(3,2,16,12,5);g.fillStyle(0x888888,0.5);g.fillEllipse(8,5,4,2);g.fillEllipse(16,7,3,1.5);});
+  // 小花
+  mkT('flower',8,8,(g,s)=>{g.fillStyle(0xffdd44);g.fillCircle(4,4,2);g.fillStyle(0xffee88);g.fillCircle(4,4,1);});
 // ============================================================
 //  主游戏场景
 // ============================================================
@@ -217,16 +229,16 @@ class GameScene extends Phaser.Scene {
     this.physics.world.setBounds(0,0,WORLD_W,WORLD_H);
     this.cameras.main.setBounds(0,0,WORLD_W,WORLD_H);
 
-    // 背景
-    this.add.rectangle(WORLD_W/2,WORLD_H/2,WORLD_W,WORLD_H,0x2d5a1e);
-    for(let i=0;i<300;i++){
-      let rx=Phaser.Math.Between(0,WORLD_W),ry=Phaser.Math.Between(0,WORLD_H);
-      this.add.rectangle(rx,ry,1,1,Phaser.Math.Between(0x2a5a1a,0x3a6a2a),0.5);
-    }
-    for(let i=0;i<80;i++){
-      let rx=Phaser.Math.Between(40,WORLD_W-40),ry=Phaser.Math.Between(40,WORLD_H-40);
-      this.add.image(rx,ry,Math.random()<0.6?'tree':'rock').setAlpha(0.4);
-    }
+    // === 星露谷风格地图 ===
+    this.add.rectangle(WORLD_W/2,WORLD_H/2,WORLD_W,WORLD_H,0x4a8c3f);
+    for(let i=0;i<600;i++){let rx=Phaser.Math.Between(0,WORLD_W),ry=Phaser.Math.Between(0,WORLD_H);let clr=Phaser.Math.RND.pick([0x3d7a35,0x4a8c3f,0x55994a,0x60aa55,0x3a7030,0x529944]);this.add.rectangle(rx,ry,Phaser.Math.Between(1,3),Phaser.Math.Between(1,3),clr,0.6);}
+    for(let i=0;i<100;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'tree_oak').setDepth(1).setAlpha(0.65).setScale(Phaser.Math.FloatBetween(0.7,1.4));}
+    for(let i=0;i<100;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'tree_pine').setDepth(1).setAlpha(0.6).setScale(Phaser.Math.FloatBetween(0.7,1.3));}
+    for(let i=0;i<120;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'bush').setDepth(1).setAlpha(0.5).setScale(Phaser.Math.FloatBetween(0.6,1.2));}
+    for(let i=0;i<250;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'grass_tuft').setDepth(1).setAlpha(0.35).setScale(Phaser.Math.FloatBetween(0.5,1.2));}
+    for(let i=0;i<80;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'rock').setDepth(1).setAlpha(0.5).setScale(Phaser.Math.FloatBetween(0.7,1.3));}
+    for(let i=0;i<30;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'boulder').setDepth(1).setAlpha(0.45).setScale(Phaser.Math.FloatBetween(0.8,1.3));}
+    for(let i=0;i<150;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'flower').setDepth(1).setAlpha(0.5).setScale(Phaser.Math.FloatBetween(0.6,1.0));}
     let border=this.add.graphics();
     border.lineStyle(3,0xff4444,0.5);border.strokeRect(0,0,WORLD_W,WORLD_H);
 
