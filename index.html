@@ -50,7 +50,7 @@ body{background:#1a1a2e;display:flex;justify-content:center;align-items:center;h
 //  柴犬飞刀传 - Shiba Blade Legend
 // ============================================================
 
-const WORLD_W = 4000, WORLD_H = 4000;
+const WORLD_W = 2400, WORLD_H = 2400;
 
 const BLADE_CONFIG = {
   1: { name:'白',  color:0xffffff, count:2, spd:1.0, size:1.0, rgb:'#ffffff' },
@@ -262,8 +262,6 @@ class GameScene extends Phaser.Scene {
     // 独立灌木
     for(let i=0;i<22;i++){let p=randPos(100);if(distSpawn(p.x,p.y)<200)continue;let tooClose=false;for(let tc of treeClusters)if(Phaser.Math.Distance.Between(p.x,p.y,tc.x,tc.y)<80){tooClose=true;break;}if(!tooClose)addDeco('bush',p.x,p.y,0.5,0.7,1.3);}
 
-    // 草丛
-    for(let i=0;i<450;i++){let p=randPos(20);addDeco('grass_tuft',p.x,p.y,0.3,0.4,1.2);}
 
     // 花丛
     let fTypes=['flower_yellow','flower_red','flower_purple','flower_white'];
@@ -647,14 +645,14 @@ class GameScene extends Phaser.Scene {
     this.kills++;
     let cfg=ENEMY_TYPES[e.getData('type')];
     let bLv=e.getData('bladeLevel');
-    let n=Phaser.Math.Between(1,2);
+    let n=1;
     for(let i=0;i<n;i++){
       let d=this.physics.add.sprite(e.x+Phaser.Math.Between(-15,15),e.y+Phaser.Math.Between(-15,15),'blade_'+bLv);
       d.setDepth(3).setData('level',bLv);d.body.setCircle(10);
       this.drops.add(d);
       this.time.delayedCall(15000,()=>{if(d.active)d.destroy();});
     }
-    if(Math.random()<0.15){
+    if(Math.random()<0.08){
       let types=['blade','blade','speed','magnet'];
       let t=types[Math.floor(Math.random()*types.length)];
       let it;
