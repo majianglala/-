@@ -581,6 +581,7 @@ class GameScene extends Phaser.Scene {
       for(let eb of [...this.eBlades.getChildren()]){
         if(!eb.active)continue;
         if(Phaser.Math.Distance.Between(pb.x,pb.y,eb.x,eb.y)<24){
+          let plv=pb.getData('level');
           let elv=eb.getData('level');
           if(plv>elv){
             SFX.play('clink');
