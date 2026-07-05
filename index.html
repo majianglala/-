@@ -586,10 +586,9 @@ class GameScene extends Phaser.Scene {
     // === 碰撞检测 ===
 
     // 玩家飞刀 vs 敌人飞刀
-    for(let pb of this.pBlades){
+    for(let pb of [...this.pBlades]){
       if(!pb.active)continue;
-      let plv=pb.getData('level');
-      for(let eb of this.eBlades.getChildren()){
+      for(let eb of [...this.eBlades.getChildren()]){
         if(!eb.active)continue;
         if(Phaser.Math.Distance.Between(pb.x,pb.y,eb.x,eb.y)<24){
           let elv=eb.getData('level');
@@ -610,9 +609,8 @@ class GameScene extends Phaser.Scene {
     }
 
     // 玩家飞刀 vs 敌人本体
-    for(let pb of this.pBlades){
-      if(!pb.active)continue;
-      for(let e of this.enemies.getChildren()){
+    for(let pb of [...this.pBlades]){
+      for(let e of [...this.enemies.getChildren()]){
         if(!e.active)continue;
         if(Phaser.Math.Distance.Between(pb.x,pb.y,e.x,e.y)<30){
           let bls=e.getData('blades')||[];
@@ -625,7 +623,7 @@ class GameScene extends Phaser.Scene {
     }
     // 玩家飞刀 vs Boss
     if(this.boss&&this.boss.active){
-      for(let pb of this.pBlades){
+      for(let pb of [...this.pBlades]){
         if(!pb.active)continue;
         if(Phaser.Math.Distance.Between(pb.x,pb.y,this.boss.x,this.boss.y)<60){
           let bls=this.boss.getData('blades')||[];
@@ -640,18 +638,18 @@ class GameScene extends Phaser.Scene {
     }
 
     // 敌人飞刀/本体 vs 玩家
-    for(let eb of this.eBlades.getChildren()){
+    for(let eb of [...this.eBlades.getChildren()]){
       if(!eb.active)continue;
       if(Phaser.Math.Distance.Between(eb.x,eb.y,this.player.x,this.player.y)<28)this.hurtPlayer(eb);
     }
-    for(let e of this.enemies.getChildren()){
+    for(let e of [...this.enemies.getChildren()]){
       if(!e.active)continue;
       if(Phaser.Math.Distance.Between(e.x,e.y,this.player.x,this.player.y)<28)this.hurtPlayer(e);
     }
     if(this.boss&&this.boss.active){
       if(Phaser.Math.Distance.Between(this.boss.x,this.boss.y,this.player.x,this.player.y)<60)this.hurtPlayer(this.boss);
     }
-
+    
     // 磁铁吸引
     if(this.magBuff>0){
       this.drops.getChildren().forEach(d=>{if(d.active)this.physics.moveToObject(d,this.player,300);});
@@ -673,12 +671,11 @@ class GameScene extends Phaser.Scene {
   // ---- 击杀敌人 ----
   // 粒子爆发辅助
   emitBurst(x,y,tex,count,tint){
-    const e=this.add.particles(x,y,tex,{
-      speed:{min:60,max:220},angle:{min:0,max:360},
-      scale:{start:1,end:0},lifespan:500,emitting:false
-    }).setDepth(15);
-    if(tint)e.setTint(tint);e.explode(count);
-    this.time.delayedCall(600,()=>e.destroy());
+    try{
+      const e=this.add.particles(x,y,tex,{speed:{min:60,max:220},angle:{min:0,max:360},scale:{start:1,end:0},lifespan:500,emitting:false}).setDepth(15);
+      if(tint)e.setTint(tint);e.explode(count);
+      this.time.delayedCall(600,()=>{if(e.active)e.destroy()});
+    }catch(ex){}
   }
   killEnemy(e){
     if(e.getData('_dead'))return;e.setData('_dead',true);
