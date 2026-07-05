@@ -231,7 +231,7 @@ class GameScene extends Phaser.Scene {
 
     // === 星露谷风格地图 ===
     this.add.rectangle(WORLD_W/2,WORLD_H/2,WORLD_W,WORLD_H,0x4a8c3f);
-    for(let i=0;i<600;i++){let rx=Phaser.Math.Between(0,WORLD_W),ry=Phaser.Math.Between(0,WORLD_H);let clr=[[0x3d7a35,0x4a8c3f,0x55994a,0x60aa55,0x3a7030,0x529944]);this.add.rectangle(rx,ry,Phaser.Math.Between(1,3),Phaser.Math.Between(1,3),clr,0.6);}
+    for(let i=0;i<600;i++){let rx=Phaser.Math.Between(0,WORLD_W),ry=Phaser.Math.Between(0,WORLD_H);let clr=[0x3d7a35,0x4a8c3f,0x55994a,0x60aa55,0x3a7030,0x529944][Math.floor(Math.random()*6)];this.add.rectangle(rx,ry,Phaser.Math.Between(1,3),Phaser.Math.Between(1,3),clr,0.6);}
     for(let i=0;i<100;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'tree_oak').setDepth(1).setAlpha(0.65).setScale((0.7 + Math.random() * (1.4 - 0.7)));}
     for(let i=0;i<100;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'tree_pine').setDepth(1).setAlpha(0.6).setScale((0.7 + Math.random() * (1.3 - 0.7)));}
     for(let i=0;i<120;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'bush').setDepth(1).setAlpha(0.5).setScale((0.6 + Math.random() * (1.2 - 0.6)));}
