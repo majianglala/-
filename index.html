@@ -655,6 +655,7 @@ class GameScene extends Phaser.Scene {
 
   // ---- 击杀敌人 ----
   killEnemy(e){
+    if(e.getData('_dead'))return;e.setData('_dead',true);
     this.kills++;
     let cfg=ENEMY_TYPES[e.getData('type')];
     let bLv=e.getData('bladeLevel');
