@@ -418,7 +418,7 @@ class GameScene extends Phaser.Scene {
       this.pLv=lv;this.pBladeCnt=0;this.rebuildBlades();
       this.float('升级! '+BLADE_CONFIG[lv].name,lv);
     }else if(lv===this.pLv){
-      this.addPBlade(this.pLv);this.pBladeCnt++;this.float('+1 '+BLADE_CONFIG[lv].name+'飞刀',lv);
+      if(this.pBlades.length<6){this.addPBlade(this.pLv);this.pBladeCnt++;}this.float('+1 '+BLADE_CONFIG[lv].name+'飞刀',lv);
       if(this.pBladeCnt>=BLADES_PER_LV&&this.pLv<7){
         SFX.play('levelup');this.cameras.main.shake(80,0.008);
         this.pLv++;this.pBladeCnt=0;this.rebuildBlades();
@@ -433,9 +433,9 @@ class GameScene extends Phaser.Scene {
   onItem(p,it){
     let t=it.getData('type');
     if(t==='blade'){
-      for(let i=0;i<3;i++)this.pBladeCnt++;
+      for(let i=0;i<3;i++){if(this.pBlades.length<6){this.addPBlade(this.pLv);this.pBladeCnt++;}}
       if(this.pBladeCnt>=BLADES_PER_LV&&this.pLv<7){
-        this.pLv++;this.pBladeCnt=Math.max(0,this.pBladeCnt-BLADES_PER_LV);this.rebuildBlades();
+        this.pLv++;this.pBladeCnt=0;this.rebuildBlades();
         this.float('★★ 升至 '+BLADE_CONFIG[this.pLv].name+'! ★★',this.pLv);
         if(this.pLv>=7&&!this.bossOut)this.time.delayedCall(2000,()=>this.spawnBoss());
       }
@@ -450,8 +450,8 @@ class GameScene extends Phaser.Scene {
     this.bossOut=true;
     this.cameras.main.shake(400,0.015);this.float('⚠ 最终Boss·八岐大蛇 出现! ⚠',0xff0000);
     this.time.delayedCall(500,()=>{
-      let bx=Phaser.Math.Clamp(this.player.x+400,WORLD_W-200,WORLD_W-200);
-      let by=Phaser.Math.Clamp(this.player.y,WORLD_H-200,WORLD_H-200);
+      let bx=Phaser.Math.Clamp(this.player.x+400,200,WORLD_W-200);
+      let by=Phaser.Math.Clamp(this.player.y+200,200,WORLD_H-200);
       this.boss=this.physics.add.sprite(bx,by,'boss_yamata');
       this.boss.setDepth(6).setData('hp',50).setData('speed',40).setData('maxHp',50).setScale(1.5);
       this.boss.body.setCircle(55);
@@ -702,7 +702,7 @@ class GameScene extends Phaser.Scene {
     SFX.play('kill');this.cameras.main.shake(120,0.005);
     let cfg=ENEMY_TYPES[e.getData('type')];
     let bLv=e.getData('bladeLevel');
-    let n=((e.getData('blades')||[]).length||e.getData('bladeCount')||1)*2;
+    let blArr=e.getData('blades')||[];let n=(blArr.length>0?blArr.length:(e.getData('bladeCount')||1))*2;
     for(let i=0;i<n;i++){
       let d=this.physics.add.sprite(e.x+Phaser.Math.Between(-15,15),e.y+Phaser.Math.Between(-15,15),'blade_'+bLv);
       d.setDepth(3).setData('level',bLv);d.body.setCircle(10);
