@@ -71,8 +71,9 @@ const ENEMY_TYPES = {
   lantern:  { name:'灯笼鬼',  minLv:3, hp:2, spd:70,  size:34, blades:2, bLv:3, clr:0xff6644 },
   tengu:    { name:'天狗面',  minLv:4, hp:3, spd:110, size:38, blades:3, bLv:4, clr:0xcc2222 },
   shadow:   { name:'影柴犬',  minLv:5, hp:3, spd:130, size:40, blades:3, bLv:5, clr:0x222233 },
+  oni:      { name:'鬼武者',  minLv:6, hp:4, spd:90,  size:46, blades:4, bLv:6, clr:0xff8800 },
 };
-const ENEMY_KEYS = ['onigiri','karasu','skull','lantern','tengu','shadow'];
+const ENEMY_KEYS = ['onigiri','karasu','skull','lantern','tengu','shadow','oni'];
 
 let game;
 
@@ -169,6 +170,21 @@ function makeTextures(scene) {
     g.fillStyle(0xff2222);g.fillCircle(17,12,3);g.fillCircle(27,12,3);
     g.fillStyle(0xff8888,0.8);g.fillCircle(17.5,11,1);g.fillCircle(27.5,11,1);
     g.fillStyle(0x333355,0.4);g.fillCircle(6,22,3);g.fillCircle(38,22,3);g.fillCircle(22,6,3);g.fillCircle(22,36,3);
+  });
+  // 鬼武者 50x50
+  mkT('enemy_oni',50,50,(g,s)=>{
+    g.fillStyle(0xcc2244);g.fillRoundedRect(4,12,42,32,8);
+    g.fillStyle(0xdd3355);g.fillRoundedRect(6,8,38,32,8);
+    g.fillStyle(0x881122);g.fillRect(16,5,18,8);
+    g.fillStyle(0x333333);g.fillTriangle(10,12,0,-4,20,8);g.fillTriangle(40,12,50,-4,30,8);
+    g.fillStyle(0x222222);g.fillTriangle(12,12,2,-2,19,8);g.fillTriangle(38,12,48,-2,31,8);
+    g.fillStyle(0xffcc00);g.fillCircle(16,20,5);g.fillCircle(34,20,5);
+    g.fillStyle(0x000000);g.fillCircle(16.5,20,2.5);g.fillCircle(34.5,20,2.5);
+    g.fillStyle(0xff8800);g.fillCircle(16,19,1);g.fillCircle(34,19,1);
+    g.fillStyle(0x222222);g.fillRect(16,32,18,4);
+    g.lineStyle(3,0xffcc00,0.6);g.beginPath();g.arc(25,26,6,0,Math.PI,false);g.strokePath();
+    g.fillStyle(0x444444);g.fillRoundedRect(8,36,34,8,4);
+    g.fillStyle(0xff8800,0.5);g.fillCircle(25,-2,8);
   });
 
   // Boss 八岐大蛇 120x120
