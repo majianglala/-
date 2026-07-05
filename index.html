@@ -55,13 +55,13 @@ const WORLD_W = 4000, WORLD_H = 4000;
 const BLADE_CONFIG = {
   1: { name:'白',  color:0xffffff, count:2, spd:1.0, size:1.0, rgb:'#ffffff' },
   2: { name:'黄',  color:0xffd700, count:2, spd:1.2, size:1.1, rgb:'#ffd700' },
-  3: { name:'绿',  color:0x44ff44, count:2, spd:1.4, size:1.2, rgb:'#44ff44' },
+  3: { name:'绿',  color:0x44ffaa, count:2, spd:1.4, size:1.2, rgb:'#44ffaa' },
   4: { name:'蓝',  color:0x4499ff, count:3, spd:1.6, size:1.3, rgb:'#4499ff' },
   5: { name:'紫',  color:0xbb44ff, count:3, spd:1.8, size:1.4, rgb:'#bb44ff' },
-  6: { name:'金',  color:0xffaa00, count:4, spd:2.0, size:1.6, rgb:'#ffaa00' },
+  6: { name:'金',  color:0xff8800, count:4, spd:2.0, size:1.6, rgb:'#ff8800' },
   7: { name:'七彩',color:0xff44ff, count:5, spd:2.5, size:2.0, rgb:'#ff44ff' },
 };
-const BLADES_PER_LV = 10;
+const BLADES_PER_LV = 15;
 const ORBIT_R = 55;
 
 const ENEMY_TYPES = {
@@ -240,9 +240,8 @@ class GameScene extends Phaser.Scene {
     function distSpawn(x,y){return Phaser.Math.Distance.Between(x,y,WORLD_W/2,WORLD_H/2);}
     function addDeco(key,x,y,a,sMn,sMx){let s=sMn+Math.random()*(sMx-sMn);d.add.image(x,y,key).setDepth(1).setAlpha(a).setScale(s);}
 
-    // 草地基底
-    d.add.rectangle(WORLD_W/2,WORLD_H/2,WORLD_W,WORLD_H,0x5a9c4f);
-    for(let i=0;i<800;i++){let p=randPos(4);let clr=[0x4a8c3f,0x55994a,0x60aa55,0x3d7a35,0x529944,0x488c3d,0x5ca050,0x65b05a][Math.floor(Math.random()*8)];d.add.rectangle(p.x,p.y,Phaser.Math.Between(1,4),Phaser.Math.Between(1,4),clr,0.5);}
+    // 草地基底 (Tile纹理,无方块)
+    d.add.tileSprite(WORLD_W/2,WORLD_H/2,WORLD_W,WORLD_H,'grass_tile').setDepth(0);
 
     // 泥土斑块
     for(let i=0;i<50;i++){let p=randPos(100);if(distSpawn(p.x,p.y)<200)continue;let sw=Phaser.Math.Between(3,6)*8+16,sh=Phaser.Math.Between(3,6)*6+12;d.add.rectangle(p.x,p.y,sw,sh,0x9B8365,0.2).setDepth(0);}
@@ -651,7 +650,7 @@ class GameScene extends Phaser.Scene {
     this.kills++;
     let cfg=ENEMY_TYPES[e.getData('type')];
     let bLv=e.getData('bladeLevel');
-    let n=Phaser.Math.Between(1,3);
+    let n=Phaser.Math.Between(1,2);
     for(let i=0;i<n;i++){
       let d=this.physics.add.sprite(e.x+Phaser.Math.Between(-15,15),e.y+Phaser.Math.Between(-15,15),'blade_'+bLv);
       d.setDepth(3).setData('level',bLv);d.body.setCircle(10);
