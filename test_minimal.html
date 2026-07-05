@@ -1,0 +1,21 @@
+﻿<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>测试</title>
+<style>body{background:#000;margin:0;display:flex;justify-content:center;align-items:center;height:100vh}</style>
+</head><body>
+<div id="game"></div>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+<script>
+new Phaser.Game({
+  type: Phaser.AUTO,
+  width: 800, height: 600,
+  parent: 'game',
+  backgroundColor: '#4488ff',
+  scene: {
+    create: function() {
+      this.add.text(400, 280, 'Phaser OK!', {fontSize:'40px',color:'#fff'}).setOrigin(0.5);
+      this.add.circle(400, 320, 50, 0xff0000);
+    }
+  }
+});
+</script>
+</body></html>

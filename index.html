@@ -320,7 +320,10 @@ class GameScene extends Phaser.Scene {
     });
     this.input.on('pointerup',(p)=>{if(this.joystickActive&&p.id===this.jPid){this.joystickActive=false;this.joystickThumb.x=this.joystickBase.x;this.joystickThumb.y=this.joystickBase.y;this.joystickDir.x=0;this.joystickDir.y=0}});
     // 小地图 (右上)
-    this.minimapBg=this.add.rectangle(950,54,120,120,0x000000,0.45).setScrollFactor(0).setDepth(100).setStrokeStyle(1,0xffffff,0.2);
+    // ══ 小地图 (右上) ══
+    this.minimapBg=this.add.graphics().setScrollFactor(0).setDepth(100);
+    this.minimapBg.fillStyle(0x111122,0.85);this.minimapBg.fillRoundedRect(918,58,114,114,8);
+    this.minimapBg.lineStyle(1.5,0x444488,0.6);this.minimapBg.strokeRoundedRect(918,58,114,114,8);
     this.minimapGfx=this.add.graphics().setScrollFactor(0).setDepth(101);
     this.input.keyboard.on('keydown',()=>SFX.resume());
     // 伤害闪屏叠加层
@@ -358,13 +361,14 @@ class GameScene extends Phaser.Scene {
     this.updateUI();
     // 小地图
     if(this.playerAlive){
-      const s=120/2400,mx=890,my=40;
+      const s=100/2400,mx=923,my=63;
       this.minimapGfx.clear();
-      this.minimapGfx.fillStyle(0xffffff,0.08);this.minimapGfx.fillRect(mx,my,120,120);
+      // 边界
       for(let e of this.enemies.getChildren()){if(!e.active)continue;this.minimapGfx.fillStyle(0xff4444,0.6);this.minimapGfx.fillCircle(mx+e.x*s,my+e.y*s,2)}
       if(this.boss&&this.boss.active){this.minimapGfx.fillStyle(0xffaa00,0.9);this.minimapGfx.fillCircle(mx+this.boss.x*s,my+this.boss.y*s,4)}
       for(let d of this.drops.getChildren()){if(!d.active)continue;this.minimapGfx.fillStyle(0x44ff44,0.4);this.minimapGfx.fillCircle(mx+d.x*s,my+d.y*s,1)}
       this.minimapGfx.fillStyle(0xffffff,1);this.minimapGfx.fillCircle(mx+this.player.x*s,my+this.player.y*s,3);
+      this.minimapGfx.lineStyle(0.5,0x6666aa,0.3);this.minimapGfx.strokeRect(mx,my,100,100);
     }
     this.time.delayedCall(8000,()=>{
       let t=document.getElementById('tutorial');if(t){t.style.transition='opacity 2s';t.style.opacity='0';}

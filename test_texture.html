@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>贴图测试</title>
+<style>body{background:#000;margin:0;display:flex;justify-content:center;align-items:center;height:100vh}</style>
+</head><body>
+<div id="game"></div>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+<script>
+new Phaser.Game({
+  type: Phaser.AUTO, width: 800, height: 600,
+  parent: 'game', backgroundColor: '#222',
+  scene: {
+    create: function() {
+      // Test 1: make.graphics
+      try {
+        var g = this.make.graphics({add:false});
+        g.fillStyle(0xff0000);
+        g.fillRect(0,0,32,32);
+        g.generateTexture('red_block',32,32);
+        g.destroy();
+        this.add.image(200,200,'red_block');
+        this.add.text(180,230,'make.graphics OK',{color:'#0f0',fontSize:'14px'});
+      } catch(e) {
+        this.add.text(50,200,'make.graphics FAIL: '+e.message,{color:'#f00',fontSize:'14px'});
+      }
+      // Test 2: fillEllipse
+      try {
+        var g2 = this.make.graphics({add:false});
+        g2.fillStyle(0xffff00);
+        g2.fillEllipse(16,16,24,16);
+        g2.generateTexture('ellipse',32,32);
+        g2.destroy();
+        this.add.image(300,200,'ellipse');
+        this.add.text(270,230,'fillEllipse OK',{color:'#0f0',fontSize:'14px'});
+      } catch(e) {
+        this.add.text(250,200,'fillEllipse FAIL: '+e.message,{color:'#f00',fontSize:'11px'});
+      }
+      // Test 3: fillTriangle
+      try {
+        var g3 = this.make.graphics({add:false});
+        g3.fillStyle(0x00ff00);
+        g3.fillTriangle(16,2,2,30,30,30);
+        g3.generateTexture('tri',32,32);
+        g3.destroy();
+        this.add.image(400,200,'tri');
+        this.add.text(370,230,'fillTriangle OK',{color:'#0f0',fontSize:'14px'});
+      } catch(e) {
+        this.add.text(350,200,'fillTriangle FAIL: '+e.message,{color:'#f00',fontSize:'11px'});
+      }
+      // Test 4: fillRoundedRect
+      try {
+        var g4 = this.make.graphics({add:false});
+        g4.fillStyle(0x00ffff);
+        g4.fillRoundedRect(2,4,28,24,8);
+        g4.generateTexture('rrect',32,32);
+        g4.destroy();
+        this.add.image(500,200,'rrect');
+        this.add.text(460,230,'fillRoundedRect OK',{color:'#0f0',fontSize:'14px'});
+      } catch(e) {
+        this.add.text(450,200,'fillRoundedRect FAIL: '+e.message,{color:'#f00',fontSize:'10px'});
+      }
+      // Test 5: path API
+      try {
+        var g5 = this.make.graphics({add:false});
+        g5.fillStyle(0xff00ff);
+        g5.beginPath();g5.arc(16,16,12,0,Math.PI*2);g5.closePath();g5.fillPath();
+        g5.generateTexture('path',32,32);
+        g5.destroy();
+        this.add.image(600,200,'path');
+        this.add.text(575,230,'path API OK',{color:'#0f0',fontSize:'14px'});
+      } catch(e) {
+        this.add.text(550,200,'path FAIL: '+e.message,{color:'#f00',fontSize:'10px'});
+      }
+      this.add.text(200,400,'如果看到5个彩色方块+5个OK=全部通过',{color:'#fff',fontSize:'18px'}).setOrigin(0.5);
+    }
+  }
+});
+</script>
+</body></html>
