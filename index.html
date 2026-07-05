@@ -290,6 +290,9 @@ class GameScene extends Phaser.Scene {
     this.player=this.physics.add.sprite(WORLD_W/2,WORLD_H/2,'shiba');
     this.player.setCollideWorldBounds(true).setDepth(10).setSize(32,32).setOffset(12,12);
     this.cameras.main.startFollow(this.player,true,0.08,0.08);
+    SFX.init();SFX.startRot();
+    this.input.keyboard.on('keydown',()=>SFX.resume());
+    this.input.on('pointerdown',()=>SFX.resume());
 
     // 状态
     this.pLv=1;this.pBladeCnt=0;this.pAlive=true;this.ended=false;
@@ -389,6 +392,7 @@ class GameScene extends Phaser.Scene {
     }else if(lv===this.pLv){
       this.addPBlade(this.pLv);this.pBladeCnt++;this.float('+1 '+BLADE_CONFIG[lv].name+'飞刀',lv);
       if(this.pBladeCnt>=BLADES_PER_LV&&this.pLv<7){
+        SFX.play('levelup');
         this.pLv++;this.pBladeCnt=0;this.rebuildBlades();
         this.float('★★ 升至 '+BLADE_CONFIG[this.pLv].name+'! ★★',this.pLv);
         if(this.pLv>=7&&!this.bossOut)this.time.delayedCall(2000,()=>this.spawnBoss());
@@ -452,6 +456,7 @@ class GameScene extends Phaser.Scene {
       this.redistAngle();
     }
     if(this.pBlades.length===0){
+    SFX.play('hurt');SFX.stopRot();
       this.pAlive=false;this.player.setTint(0xff0000);
       this.float('💀 阵亡!',0xff0000);
       this.time.delayedCall(1200,()=>this.endGame(false));
@@ -578,6 +583,7 @@ class GameScene extends Phaser.Scene {
         if(Phaser.Math.Distance.Between(pb.x,pb.y,eb.x,eb.y)<24){
           let elv=eb.getData('level');
           if(plv>elv){
+          SFX.play('clink');
             let ow=eb.getData('owner');
             if(ow&&ow.active){let a=ow.getData('blades')||[];let i=a.indexOf(eb);if(i>=0)a.splice(i,1);}
             eb.destroy();
@@ -657,6 +663,7 @@ class GameScene extends Phaser.Scene {
   killEnemy(e){
     if(e.getData('_dead'))return;e.setData('_dead',true);
     this.kills++;
+    SFX.play('kill');
     let cfg=ENEMY_TYPES[e.getData('type')];
     let bLv=e.getData('bladeLevel');
     let n=((e.getData('blades')||[]).length||e.getData('bladeCount')||1)*2;
@@ -701,6 +708,29 @@ class GameScene extends Phaser.Scene {
 // ============================================================
 //  启动 / 重启
 // ============================================================
+// ============================================================
+//  音效系统 (程序化合成)
+// ============================================================
+const SFX = (function(){
+  let ctx=null,buf={},rotOsc=null,rotGain=null,playing=false;
+  function init(){
+    try{ctx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){return}
+    const sr=ctx.sampleRate,dur=0.15;
+    buf.clink=makeBuf(0.1,sr,t=>Math.sin(2*Math.PI*1200*t)*Math.exp(-t*50)*0.25+Math.sin(2*Math.PI*800*t)*Math.exp(-t*35)*0.15);
+    buf.kill=makeBuf(0.25,sr,t=>(Math.random()*2-1)*Math.exp(-t*15)*0.2+Math.sin(2*Math.PI*150*t)*Math.exp(-t*12)*0.3);
+    buf.levelup=makeBuf(0.5,sr,t=>{const f=250+t*700;return Math.sin(2*Math.PI*f*t)*Math.exp(-t*2.5)*0.25});
+    buf.hurt=makeBuf(0.2,sr,t=>(Math.random()*2-1)*Math.exp(-t*8)*0.3);
+  }
+  function makeBuf(dur,sr,fn){const len=Math.floor(sr*dur),b=ctx.createBuffer(1,len,sr),d=b.getChannelData(0);for(let i=0;i<len;i++)d[i]=fn(i/sr);return b}
+  function play(name){if(!ctx||!buf[name])return;if(ctx.state==='suspended')ctx.resume();const s=ctx.createBufferSource();s.buffer=buf[name];s.connect(ctx.destination);s.start()}
+  function startRot(){if(!ctx||rotOsc)return;if(ctx.state==='suspended')ctx.resume();const sr=ctx.sampleRate;
+    rotOsc=ctx.createOscillator();rotGain=ctx.createGain();const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=200;
+    rotOsc.frequency.value=100;rotOsc.type='sine';rotGain.gain.value=0.03;rotOsc.connect(f);f.connect(rotGain);rotGain.connect(ctx.destination);rotOsc.start();playing=true
+  }
+  function stopRot(){if(rotOsc){try{rotOsc.stop()}catch(e){}rotOsc.disconnect();rotGain.disconnect();rotOsc=null;rotGain=null;playing=false}}
+  function resume(){if(ctx&&ctx.state==='suspended')ctx.resume()}
+  return{init,play,startRot,stopRot,resume};
+})();
 function startGame(){
   let ov=document.getElementById('game-overlay');ov.classList.remove('show');
   let t=document.getElementById('tutorial');if(t){t.style.transition='';t.style.opacity='1';}
