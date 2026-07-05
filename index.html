@@ -361,7 +361,7 @@ class GameScene extends Phaser.Scene {
     let av=[];
     for(let k of ENEMY_KEYS)if(ENEMY_TYPES[k].minLv<=this.pLv)av.push(k);
     let total=0;let w=[];
-    for(let i=0;i<av.length;i++){total+=1+i*0.5;w.push(total);}
+    for(let i=0;i<av.length;i++){let age=this.pLv-ENEMY_TYPES[av[i]].minLv;let wt=Math.max(1,5-age);total+=wt;w.push(total);}
     let r=Math.random()*total;let tk=av[0];
     for(let i=0;i<w.length;i++){if(r<=w[i]){tk=av[i];break;}}
     let cfg=ENEMY_TYPES[tk];
