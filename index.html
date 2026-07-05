@@ -229,6 +229,14 @@ function makeTextures(scene) {
   mkT('fence_v',12,28,(g,s)=>{g.fillStyle(0x8B6914);g.fillRect(4,0,4,28);g.fillStyle(0xA07818);g.fillRect(2,0,3,28);for(let i=2;i<28;i+=8){g.fillStyle(0x6B4F10);g.fillRect(0,i,12,3);}});
   // 蘑菇
   mkT('mushroom',10,10,(g,s)=>{g.fillStyle(0xdddddd);g.fillRect(3,5,4,5);g.fillStyle(0xff4444);g.fillEllipse(5,3,8,5);g.fillStyle(0xffffff);g.fillCircle(3,2,1);g.fillCircle(7,3,1);});
+  // 粒子
+  mkT('particle_w',6,6,(g,s)=>{g.fillStyle(0xffffff);g.fillCircle(3,3,3)});
+  mkT('particle_y',6,6,(g,s)=>{g.fillStyle(0xffd700);g.fillCircle(3,3,3)});
+  mkT('particle_g',6,6,(g,s)=>{g.fillStyle(0x44ffaa);g.fillCircle(3,3,3)});
+  mkT('particle_b',6,6,(g,s)=>{g.fillStyle(0x4499ff);g.fillCircle(3,3,3)});
+  mkT('particle_p',6,6,(g,s)=>{g.fillStyle(0xbb44ff);g.fillCircle(3,3,3)});
+  mkT('particle_gold',6,6,(g,s)=>{g.fillStyle(0xff8800);g.fillCircle(3,3,3)});
+  mkT('particle_r',6,6,(g,s)=>{g.fillStyle(0xff4444);g.fillCircle(3,3,3)});
 }
 // ============================================================
 //  主游戏场景
@@ -292,6 +300,8 @@ class GameScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player,true,0.08,0.08);
     SFX.init();SFX.startRot();SFX.startBGM();
     this.input.keyboard.on('keydown',()=>SFX.resume());
+    // 伤害闪屏叠加层
+    this.damageOverlay=this.add.rectangle(WORLD_W/2,WORLD_H/2,WORLD_W,WORLD_H,0xff0000,0).setDepth(50).setScrollFactor(0);
     this.input.on('pointerdown',()=>SFX.resume());
 
     // 状态
@@ -392,7 +402,7 @@ class GameScene extends Phaser.Scene {
     }else if(lv===this.pLv){
       this.addPBlade(this.pLv);this.pBladeCnt++;this.float('+1 '+BLADE_CONFIG[lv].name+'飞刀',lv);
       if(this.pBladeCnt>=BLADES_PER_LV&&this.pLv<7){
-        SFX.play('levelup');
+        SFX.play('levelup');this.cameras.main.shake(80,0.008);this.emitBurst(this.player.x,this.player.y,'particle_y',20,BLADE_CONFIG[this.pLv].color);
         this.pLv++;this.pBladeCnt=0;this.rebuildBlades();
         this.float('★★ 升至 '+BLADE_CONFIG[this.pLv].name+'! ★★',this.pLv);
         if(this.pLv>=7&&!this.bossOut)this.time.delayedCall(2000,()=>this.spawnBoss());
@@ -420,7 +430,7 @@ class GameScene extends Phaser.Scene {
   // ---- Boss ----
   spawnBoss(){
     this.bossOut=true;
-    this.float('⚠ 最终Boss·八岐大蛇 出现! ⚠',0xff0000);
+    this.cameras.main.shake(400,0.015);this.float('⚠ 最终Boss·八岐大蛇 出现! ⚠',0xff0000);
     this.time.delayedCall(500,()=>{
       let bx=Phaser.Math.Clamp(this.player.x+400,WORLD_W-200,WORLD_W-200);
       let by=Phaser.Math.Clamp(this.player.y,WORLD_H-200,WORLD_H-200);
@@ -453,6 +463,7 @@ class GameScene extends Phaser.Scene {
     if(this.pBlades.length>0){
       let b=this.pBlades.pop();b.destroy();
       this.float('-1 飞刀',0xff4444);
+    this.tweens.add({targets:this.damageOverlay,alpha:{from:0.15,to:0},duration:200});
       this.redistAngle();
     }
     if(this.pBlades.length===0){
@@ -583,7 +594,7 @@ class GameScene extends Phaser.Scene {
         if(Phaser.Math.Distance.Between(pb.x,pb.y,eb.x,eb.y)<24){
           let elv=eb.getData('level');
           if(plv>elv){
-          SFX.play('clink');
+          this.emitBurst(pb.x-28,pb.y-28,'particle_w',5);SFX.play('clink');
             let ow=eb.getData('owner');
             if(ow&&ow.active){let a=ow.getData('blades')||[];let i=a.indexOf(eb);if(i>=0)a.splice(i,1);}
             eb.destroy();
@@ -660,10 +671,19 @@ class GameScene extends Phaser.Scene {
   }
 
   // ---- 击杀敌人 ----
+  // 粒子爆发辅助
+  emitBurst(x,y,tex,count,tint){
+    const e=this.add.particles(x,y,tex,{
+      speed:{min:60,max:220},angle:{min:0,max:360},
+      scale:{start:1,end:0},lifespan:500,emitting:false
+    }).setDepth(15);
+    if(tint)e.setTint(tint);e.explode(count);
+    this.time.delayedCall(600,()=>e.destroy());
+  }
   killEnemy(e){
     if(e.getData('_dead'))return;e.setData('_dead',true);
     this.kills++;
-    SFX.play('kill');
+    SFX.play('kill');this.emitBurst(e.x,e.y,'particle_r',12);this.cameras.main.shake(120,0.005);
     let cfg=ENEMY_TYPES[e.getData('type')];
     let bLv=e.getData('bladeLevel');
     let n=((e.getData('blades')||[]).length||e.getData('bladeCount')||1)*2;
