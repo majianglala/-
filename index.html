@@ -218,7 +218,17 @@ function makeTextures(scene) {
   // 大石
   mkT('boulder',22,18,(g,s)=>{g.fillStyle(0x666666);g.fillRoundedRect(1,6,20,10,4);g.fillStyle(0x777777);g.fillRoundedRect(3,2,16,12,5);g.fillStyle(0x888888,0.5);g.fillEllipse(8,5,4,2);g.fillEllipse(16,7,3,1.5);});
   // 小花
-  mkT('flower',8,8,(g,s)=>{g.fillStyle(0xffdd44);g.fillCircle(4,4,2);g.fillStyle(0xffee88);g.fillCircle(4,4,1);});
+  mkT('flower_yellow',8,8,(g,s)=>{g.fillStyle(0xffdd44);g.fillCircle(4,4,2);g.fillStyle(0xffee88);g.fillCircle(4,4,1);});
+  mkT('flower_red',8,8,(g,s)=>{g.fillStyle(0xff4455);g.fillCircle(4,4,2);g.fillStyle(0xff8899);g.fillCircle(4,4,1);});
+  mkT('flower_purple',8,8,(g,s)=>{g.fillStyle(0xbb44ff);g.fillCircle(4,4,2);g.fillStyle(0xdd88ff);g.fillCircle(4,4,1);});
+  mkT('flower_white',8,8,(g,s)=>{g.fillStyle(0xeeeeff);g.fillCircle(4,4,2);g.fillStyle(0xffffff);g.fillCircle(4,4,1);});
+  // 树桩
+  mkT('stump',18,14,(g,s)=>{g.fillStyle(0x665544);g.fillRoundedRect(3,2,12,12,3);g.fillStyle(0x775533);g.fillRoundedRect(4,0,10,4,2);g.fillStyle(0x887744);g.fillEllipse(9,2,8,3);g.fillStyle(0x554433);g.fillCircle(7,7,1);g.fillCircle(11,9,1.5);});
+  // 围栏
+  mkT('fence_h',28,12,(g,s)=>{g.fillStyle(0x8B6914);g.fillRect(0,4,28,4);g.fillStyle(0xA07818);g.fillRect(0,2,28,3);for(let i=2;i<28;i+=8){g.fillStyle(0x6B4F10);g.fillRect(i,0,3,12);}});
+  mkT('fence_v',12,28,(g,s)=>{g.fillStyle(0x8B6914);g.fillRect(4,0,4,28);g.fillStyle(0xA07818);g.fillRect(2,0,3,28);for(let i=2;i<28;i+=8){g.fillStyle(0x6B4F10);g.fillRect(0,i,12,3);}});
+  // 蘑菇
+  mkT('mushroom',10,10,(g,s)=>{g.fillStyle(0xdddddd);g.fillRect(3,5,4,5);g.fillStyle(0xff4444);g.fillEllipse(5,3,8,5);g.fillStyle(0xffffff);g.fillCircle(3,2,1);g.fillCircle(7,3,1);});
 }
 // ============================================================
 //  主游戏场景
@@ -376,7 +386,7 @@ class GameScene extends Phaser.Scene {
       this.pLv=lv;this.pBladeCnt=0;this.rebuildBlades();
       this.float('升级! '+BLADE_CONFIG[lv].name,lv);
     }else{
-      this.pBladeCnt++;this.float('+1 '+BLADE_CONFIG[lv].name+'飞刀',lv);
+      this.addPBlade(this.pLv);this.pBladeCnt++;this.float('+1 '+BLADE_CONFIG[lv].name+'飞刀',lv);
       if(this.pBladeCnt>=BLADES_PER_LV&&this.pLv<7){
         this.pLv++;this.pBladeCnt=0;this.rebuildBlades();
         this.float('★★ 升至 '+BLADE_CONFIG[this.pLv].name+'! ★★',this.pLv);
@@ -645,7 +655,7 @@ class GameScene extends Phaser.Scene {
     this.kills++;
     let cfg=ENEMY_TYPES[e.getData('type')];
     let bLv=e.getData('bladeLevel');
-    let n=1;
+    let n=(e.getData('blades')||[]).length||e.getData('bladeCount')||1;
     for(let i=0;i<n;i++){
       let d=this.physics.add.sprite(e.x+Phaser.Math.Between(-15,15),e.y+Phaser.Math.Between(-15,15),'blade_'+bLv);
       d.setDepth(3).setData('level',bLv);d.body.setCircle(10);
