@@ -59,7 +59,7 @@ const BLADE_CONFIG = {
   4: { name:'蓝',  color:0x4499ff, count:3, spd:1.6, size:1.3, rgb:'#4499ff' },
   5: { name:'紫',  color:0xbb44ff, count:3, spd:1.8, size:1.4, rgb:'#bb44ff' },
   6: { name:'金',  color:0xff8800, count:4, spd:2.0, size:1.6, rgb:'#ff8800' },
-  7: { name:'七彩',color:0xff44ff, count:5, spd:2.5, size:2.0, rgb:'#ff44ff' },
+  7: { name:'黑',  color:0x222222, count:5, spd:2.5, size:2.0, rgb:'#222222' },
 };
 const BLADES_PER_LV = 6;
 const ORBIT_R = 55;
@@ -442,7 +442,7 @@ class GameScene extends Phaser.Scene {
       let bx=Phaser.Math.Clamp(this.player.x+400,WORLD_W-200,WORLD_W-200);
       let by=Phaser.Math.Clamp(this.player.y,WORLD_H-200,WORLD_H-200);
       this.boss=this.physics.add.sprite(bx,by,'boss_yamata');
-      this.boss.setDepth(6).setData('hp',50).setData('speed',40).setData('maxHp',50);
+      this.boss.setDepth(6).setData('hp',50).setData('speed',40).setData('maxHp',50).setScale(1.5);
       this.boss.body.setCircle(55);
       this.boss.setData('blades',[]);
       for(let i=0;i<8;i++){
@@ -457,11 +457,13 @@ class GameScene extends Phaser.Scene {
   }
   killBoss(){
     this.bossDead=true;
-    this.boss.destroy();
-    for(let b of this.boss.getData('blades'))b.destroy();
+    let bBlades=this.boss.getData('blades')||[];
     if(this.bossBar)this.bossBar.destroy();
+    this.boss.destroy();
+    for(let b of bBlades)if(b.active)b.destroy();
     this.float('🎉 恭喜通关! 🎉',0xffdd00);
     this.time.delayedCall(1500,()=>this.endGame(true));
+  }
   }
 
   // ---- 伤害 ----
@@ -637,7 +639,7 @@ class GameScene extends Phaser.Scene {
           if(bls.length===0){
             let hp=this.boss.getData('hp')-1;this.boss.setData('hp',hp);
             if(hp<=0)this.killBoss();
-            this.boss.setTint(0xff6666);
+            if(this.boss&&this.boss.active)this.boss.setTint(0xff6666);
             this.time.delayedCall(100,()=>{if(this.boss&&this.boss.active)this.boss.clearTint();});
           }
         }
