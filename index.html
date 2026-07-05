@@ -319,6 +319,39 @@ class GameScene extends Phaser.Scene {
       else{this.joystickThumb.x=p.x;this.joystickThumb.y=p.y;this.joystickDir.x=dx/max;this.joystickDir.y=dy/max}
     });
     this.input.on('pointerup',(p)=>{if(this.joystickActive&&p.id===this.jPid){this.joystickActive=false;this.joystickThumb.x=this.joystickBase.x;this.joystickThumb.y=this.joystickBase.y;this.joystickDir.x=0;this.joystickDir.y=0}});
+    this.input.keyboard.on('keydown',()=>SFX.resume());
+    this.input.on('pointerdown',()=>SFX.resume());
+
+    // 状态
+    this.pLv=1;this.pBladeCnt=0;this.pAlive=true;this.ended=false;
+    this.kills=0;this.gTime=0;this.bossOut=false;this.bossDead=false;
+    this.spdBuff=0;this.magBuff=0;
+
+    // 玩家飞刀
+    this.pBlades=[];
+    this.addPBlade(1);this.addPBlade(1);
+
+    // 按键
+    this.keys=this.input.keyboard.addKeys({
+      up:Phaser.Input.Keyboard.KeyCodes.W,down:Phaser.Input.Keyboard.KeyCodes.S,
+      left:Phaser.Input.Keyboard.KeyCodes.A,right:Phaser.Input.Keyboard.KeyCodes.D
+    });
+
+    // 对象组
+    this.enemies=this.physics.add.group();
+    this.eBlades=this.physics.add.group();
+    this.items=this.physics.add.group();
+    this.drops=this.physics.add.group();
+
+    // 碰撞
+    this.physics.add.overlap(this.player,this.drops,this.onDrop,null,this);
+    this.physics.add.overlap(this.player,this.items,this.onItem,null,this);
+
+    // 刷怪/道具计时器
+    this.spawnCD=0;this.spawnRate=2500;this.maxEn=12;
+    this.itemCD=0;
+
+    this.updateUI();
     this.time.delayedCall(8000,()=>{
       let t=document.getElementById('tutorial');if(t){t.style.transition='opacity 2s';t.style.opacity='0';}
     });
