@@ -240,11 +240,8 @@ class GameScene extends Phaser.Scene {
     function distSpawn(x,y){return Phaser.Math.Distance.Between(x,y,WORLD_W/2,WORLD_H/2);}
     function addDeco(key,x,y,a,sMn,sMx){let s=sMn+Math.random()*(sMx-sMn);d.add.image(x,y,key).setDepth(1).setAlpha(a).setScale(s);}
 
-    // 草地基底 (Tile纹理,无方块)
-    d.add.tileSprite(WORLD_W/2,WORLD_H/2,WORLD_W,WORLD_H,'grass_tile').setDepth(0);
-
-    // 泥土斑块
-    for(let i=0;i<50;i++){let p=randPos(100);if(distSpawn(p.x,p.y)<200)continue;let sw=Phaser.Math.Between(3,6)*8+16,sh=Phaser.Math.Between(3,6)*6+12;d.add.rectangle(p.x,p.y,sw,sh,0x9B8365,0.2).setDepth(0);}
+    // 草地背景
+    d.add.rectangle(WORLD_W/2,WORLD_H/2,WORLD_W,WORLD_H,0x5a9c4f).setDepth(0);
 
     // === 树丛集群 ===
     let treeClusters=[];
