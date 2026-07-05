@@ -61,7 +61,7 @@ const BLADE_CONFIG = {
   6: { name:'金',  color:0xff8800, count:4, spd:2.0, size:1.6, rgb:'#ff8800' },
   7: { name:'七彩',color:0xff44ff, count:5, spd:2.5, size:2.0, rgb:'#ff44ff' },
 };
-const BLADES_PER_LV = 15;
+const BLADES_PER_LV = 6;
 const ORBIT_R = 55;
 
 const ENEMY_TYPES = {
@@ -386,13 +386,15 @@ class GameScene extends Phaser.Scene {
     if(lv>this.pLv){
       this.pLv=lv;this.pBladeCnt=0;this.rebuildBlades();
       this.float('升级! '+BLADE_CONFIG[lv].name,lv);
-    }else{
+    }else if(lv===this.pLv){
       this.addPBlade(this.pLv);this.pBladeCnt++;this.float('+1 '+BLADE_CONFIG[lv].name+'飞刀',lv);
       if(this.pBladeCnt>=BLADES_PER_LV&&this.pLv<7){
         this.pLv++;this.pBladeCnt=0;this.rebuildBlades();
         this.float('★★ 升至 '+BLADE_CONFIG[this.pLv].name+'! ★★',this.pLv);
         if(this.pLv>=7&&!this.bossOut)this.time.delayedCall(2000,()=>this.spawnBoss());
       }
+    }else{
+      this.addPBlade(this.pLv);this.float('+1 '+BLADE_CONFIG[lv].name+' (低阶)',lv);
     }
     b.destroy();this.updateUI();
   }
