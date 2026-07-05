@@ -307,6 +307,21 @@ class GameScene extends Phaser.Scene {
     this.player.setCollideWorldBounds(true).setDepth(10).setSize(32,32).setOffset(12,12);
     this.cameras.main.startFollow(this.player,true,0.08,0.08);
     SFX.init();SFX.startRot();SFX.startBGM();
+    // 方向盘 (左下)
+    this.joystickBase=this.add.circle(110,700,55,0xffffff,0.12).setScrollFactor(0).setDepth(100).setStrokeStyle(2,0xffffff,0.25);
+    this.joystickThumb=this.add.circle(110,700,22,0xffffff,0.35).setScrollFactor(0).setDepth(101);
+    this.joystickActive=false;this.joystickDir={x:0,y:0};
+    this.input.on('pointerdown',(p)=>{if(p.x<200&&p.y>550){this.joystickActive=true;this.jPid=p.id}});
+    this.input.on('pointermove',(p)=>{
+      if(!this.joystickActive||p.id!==this.jPid)return;
+      const dx=p.x-this.joystickBase.x,dy=p.y-this.joystickBase.y,dist=Math.sqrt(dx*dx+dy*dy),max=55;
+      if(dist>max){this.joystickThumb.x=this.joystickBase.x+dx/dist*max;this.joystickThumb.y=this.joystickBase.y+dy/dist*max;this.joystickDir.x=dx/dist;this.joystickDir.y=dy/dist}
+      else{this.joystickThumb.x=p.x;this.joystickThumb.y=p.y;this.joystickDir.x=dx/max;this.joystickDir.y=dy/max}
+    });
+    this.input.on('pointerup',(p)=>{if(this.joystickActive&&p.id===this.jPid){this.joystickActive=false;this.joystickThumb.x=this.joystickBase.x;this.joystickThumb.y=this.joystickBase.y;this.joystickDir.x=0;this.joystickDir.y=0}});
+    // 小地图 (右上)
+    this.minimapBg=this.add.rectangle(950,54,120,120,0x000000,0.45).setScrollFactor(0).setDepth(100).setStrokeStyle(1,0xffffff,0.2);
+    this.minimapGfx=this.add.graphics().setScrollFactor(0).setDepth(101);
     this.input.keyboard.on('keydown',()=>SFX.resume());
     // 伤害闪屏叠加层
     this.input.on('pointerdown',()=>SFX.resume());
@@ -341,6 +356,16 @@ class GameScene extends Phaser.Scene {
     this.itemCD=0;
 
     this.updateUI();
+    // 小地图
+    if(this.playerAlive){
+      const s=120/2400,mx=890,my=40;
+      this.minimapGfx.clear();
+      this.minimapGfx.fillStyle(0xffffff,0.08);this.minimapGfx.fillRect(mx,my,120,120);
+      for(let e of this.enemies.getChildren()){if(!e.active)continue;this.minimapGfx.fillStyle(0xff4444,0.6);this.minimapGfx.fillCircle(mx+e.x*s,my+e.y*s,2)}
+      if(this.boss&&this.boss.active){this.minimapGfx.fillStyle(0xffaa00,0.9);this.minimapGfx.fillCircle(mx+this.boss.x*s,my+this.boss.y*s,4)}
+      for(let d of this.drops.getChildren()){if(!d.active)continue;this.minimapGfx.fillStyle(0x44ff44,0.4);this.minimapGfx.fillCircle(mx+d.x*s,my+d.y*s,1)}
+      this.minimapGfx.fillStyle(0xffffff,1);this.minimapGfx.fillCircle(mx+this.player.x*s,my+this.player.y*s,3);
+    }
     this.time.delayedCall(8000,()=>{
       let t=document.getElementById('tutorial');if(t){t.style.transition='opacity 2s';t.style.opacity='0';}
     });
@@ -539,6 +564,7 @@ class GameScene extends Phaser.Scene {
     if(this.keys.up.isDown)vy=-1;
     if(this.keys.down.isDown)vy=1;
     if(vx&&vy){vx*=0.707;vy*=0.707;}
+    if(vx===0&&vy===0&&this.joystickActive){vx=this.joystickDir.x;vy=this.joystickDir.y}
     this.player.setVelocity(vx*spd,vy*spd);
 
     // 玩家飞刀环绕
