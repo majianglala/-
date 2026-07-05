@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -230,21 +230,57 @@ class GameScene extends Phaser.Scene {
     this.physics.world.setBounds(0,0,WORLD_W,WORLD_H);
     this.cameras.main.setBounds(0,0,WORLD_W,WORLD_H);
 
-    // === 星露谷风格地图 ===
-    this.add.rectangle(WORLD_W/2,WORLD_H/2,WORLD_W,WORLD_H,0x4a8c3f);
-    for(let i=0;i<600;i++){let rx=Phaser.Math.Between(0,WORLD_W),ry=Phaser.Math.Between(0,WORLD_H);let clr=[0x3d7a35,0x4a8c3f,0x55994a,0x60aa55,0x3a7030,0x529944][Math.floor(Math.random()*6)];this.add.rectangle(rx,ry,Phaser.Math.Between(1,3),Phaser.Math.Between(1,3),clr,0.6);}
-    for(let i=0;i<100;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'tree_oak').setDepth(1).setAlpha(0.65).setScale((0.7 + Math.random() * (1.4 - 0.7)));}
-    for(let i=0;i<100;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'tree_pine').setDepth(1).setAlpha(0.6).setScale((0.7 + Math.random() * (1.3 - 0.7)));}
-    for(let i=0;i<120;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'bush').setDepth(1).setAlpha(0.5).setScale((0.6 + Math.random() * (1.2 - 0.6)));}
-    for(let i=0;i<250;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'grass_tuft').setDepth(1).setAlpha(0.35).setScale((0.5 + Math.random() * (1.2 - 0.5)));}
-    for(let i=0;i<80;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'rock').setDepth(1).setAlpha(0.5).setScale((0.7 + Math.random() * (1.3 - 0.7)));}
-    for(let i=0;i<30;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'boulder').setDepth(1).setAlpha(0.45).setScale((0.8 + Math.random() * (1.3 - 0.8)));}
-    for(let i=0;i<150;i++){let rx=Phaser.Math.Between(60,WORLD_W-60),ry=Phaser.Math.Between(60,WORLD_H-60);this.add.image(rx,ry,'flower').setDepth(1).setAlpha(0.5).setScale((0.6 + Math.random() * (1.0 - 0.6)));}
-    let border=this.add.graphics();
-    border.lineStyle(3,0xff4444,0.5);border.strokeRect(0,0,WORLD_W,WORLD_H);
 
     // 生成贴图
     makeTextures(this);
+
+    // === 星露谷风格地图 ===
+    let d=this;
+    function randPos(m=60){return{x:Phaser.Math.Between(m,WORLD_W-m),y:Phaser.Math.Between(m,WORLD_H-m)};}
+    function distSpawn(x,y){return Phaser.Math.Distance.Between(x,y,WORLD_W/2,WORLD_H/2);}
+    function addDeco(key,x,y,a,sMn,sMx){let s=sMn+Math.random()*(sMx-sMn);d.add.image(x,y,key).setDepth(1).setAlpha(a).setScale(s);}
+
+    // 草地基底
+    d.add.rectangle(WORLD_W/2,WORLD_H/2,WORLD_W,WORLD_H,0x5a9c4f);
+    for(let i=0;i<800;i++){let p=randPos(4);let clr=[0x4a8c3f,0x55994a,0x60aa55,0x3d7a35,0x529944,0x488c3d,0x5ca050,0x65b05a][Math.floor(Math.random()*8)];d.add.rectangle(p.x,p.y,Phaser.Math.Between(1,4),Phaser.Math.Between(1,4),clr,0.5);}
+
+    // 泥土斑块
+    for(let i=0;i<50;i++){let p=randPos(100);if(distSpawn(p.x,p.y)<200)continue;let sw=Phaser.Math.Between(3,6)*8+16,sh=Phaser.Math.Between(3,6)*6+12;d.add.rectangle(p.x,p.y,sw,sh,0x9B8365,0.2).setDepth(0);}
+
+    // === 树丛集群 ===
+    let treeClusters=[];
+    for(let c=0;c<38;c++){
+      let cx,cy;
+      do{cx=Phaser.Math.Between(150,WORLD_W-150);cy=Phaser.Math.Between(150,WORLD_H-150);}while(distSpawn(cx,cy)<280);
+      treeClusters.push({x:cx,y:cy});
+      let tc=Phaser.Math.Between(3,8),isOak=Math.random()<0.55,tk=isOak?'tree_oak':'tree_pine';
+      for(let t=0;t<tc;t++)addDeco(tk,cx+Phaser.Math.Between(-28,28),cy+Phaser.Math.Between(-28,28),isOak?0.7:0.65,0.7,1.6);
+      for(let b=0;b<Phaser.Math.Between(2,5);b++)addDeco('bush',cx+Phaser.Math.Between(-45,45),cy+Phaser.Math.Between(-45,45),0.5,0.5,1.2);
+      if(Math.random()<0.3)addDeco('stump',cx+Phaser.Math.Between(-30,30),cy+Phaser.Math.Between(-30,30),0.6,0.7,1.2);
+      if(Math.random()<0.18){let fx=cx+Phaser.Math.Between(-55,55),fy=cy+Phaser.Math.Between(-55,55),isH=Math.random()<0.5,fl=Phaser.Math.Between(2,5);for(let f=0;f<fl;f++){let fkx=isH?fx+f*28:fx,fky=isH?fy:fy+f*28;addDeco(isH?'fence_h':'fence_v',fkx,fky,0.55,0.85,1.15);}}
+    }
+
+    // 散落石块
+    for(let i=0;i<70;i++){let p=randPos(80);if(distSpawn(p.x,p.y)<150)continue;addDeco(Math.random()<0.2?'boulder':'rock',p.x,p.y,0.45,0.7,1.3);}
+
+    // 独立灌木
+    for(let i=0;i<22;i++){let p=randPos(100);if(distSpawn(p.x,p.y)<200)continue;let tooClose=false;for(let tc of treeClusters)if(Phaser.Math.Distance.Between(p.x,p.y,tc.x,tc.y)<80){tooClose=true;break;}if(!tooClose)addDeco('bush',p.x,p.y,0.5,0.7,1.3);}
+
+    // 草丛
+    for(let i=0;i<450;i++){let p=randPos(20);addDeco('grass_tuft',p.x,p.y,0.3,0.4,1.2);}
+
+    // 花丛
+    let fTypes=['flower_yellow','flower_red','flower_purple','flower_white'];
+    for(let i=0;i<220;i++){let p=randPos(20);if(distSpawn(p.x,p.y)<150||Math.random()<0.35){let fk=fTypes[Math.floor(Math.random()*fTypes.length)],gs=Math.random()<0.5?1:Phaser.Math.Between(2,6);for(let g=0;g<gs;g++)addDeco(fk,p.x+Phaser.Math.Between(-18,18),p.y+Phaser.Math.Between(-18,18),0.55,0.6,1.0);}}
+
+    // 蘑菇
+    for(let i=0;i<15;i++){let p=randPos(80);if(distSpawn(p.x,p.y)<200)continue;addDeco('mushroom',p.x,p.y,0.5,0.7,1.1);}
+
+    // 世界边界
+    let border=d.add.graphics();
+    border.lineStyle(4,0xff6644,0.35);border.strokeRect(0,0,WORLD_W,WORLD_H);
+
+
 
     // 玩家
     this.player=this.physics.add.sprite(WORLD_W/2,WORLD_H/2,'shiba');
