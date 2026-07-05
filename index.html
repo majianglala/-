@@ -290,7 +290,7 @@ class GameScene extends Phaser.Scene {
     this.player=this.physics.add.sprite(WORLD_W/2,WORLD_H/2,'shiba');
     this.player.setCollideWorldBounds(true).setDepth(10).setSize(32,32).setOffset(12,12);
     this.cameras.main.startFollow(this.player,true,0.08,0.08);
-    SFX.init();SFX.startRot();
+    SFX.init();SFX.startRot();SFX.startBGM();
     this.input.keyboard.on('keydown',()=>SFX.resume());
     this.input.on('pointerdown',()=>SFX.resume());
 
@@ -456,7 +456,7 @@ class GameScene extends Phaser.Scene {
       this.redistAngle();
     }
     if(this.pBlades.length===0){
-    SFX.play('hurt');SFX.stopRot();
+    SFX.play('hurt');SFX.stopRot();SFX.stopBGM();
       this.pAlive=false;this.player.setTint(0xff0000);
       this.float('💀 阵亡!',0xff0000);
       this.time.delayedCall(1200,()=>this.endGame(false));
@@ -713,9 +713,10 @@ class GameScene extends Phaser.Scene {
 // ============================================================
 const SFX = (function(){
   let ctx=null,buf={},rotOsc=null,rotGain=null,playing=false;
+  let bgmSrc=null,bgmGain=null,bgmOn=false,bgmBuf=null;
   function init(){
     try{ctx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){return}
-    const sr=ctx.sampleRate,dur=0.15;
+    const sr=ctx.sampleRate;
     buf.clink=makeBuf(0.1,sr,t=>Math.sin(2*Math.PI*1200*t)*Math.exp(-t*50)*0.25+Math.sin(2*Math.PI*800*t)*Math.exp(-t*35)*0.15);
     buf.kill=makeBuf(0.25,sr,t=>(Math.random()*2-1)*Math.exp(-t*15)*0.2+Math.sin(2*Math.PI*150*t)*Math.exp(-t*12)*0.3);
     buf.levelup=makeBuf(0.5,sr,t=>{const f=250+t*700;return Math.sin(2*Math.PI*f*t)*Math.exp(-t*2.5)*0.25});
@@ -723,13 +724,35 @@ const SFX = (function(){
   }
   function makeBuf(dur,sr,fn){const len=Math.floor(sr*dur),b=ctx.createBuffer(1,len,sr),d=b.getChannelData(0);for(let i=0;i<len;i++)d[i]=fn(i/sr);return b}
   function play(name){if(!ctx||!buf[name])return;if(ctx.state==='suspended')ctx.resume();const s=ctx.createBufferSource();s.buffer=buf[name];s.connect(ctx.destination);s.start()}
-  function startRot(){if(!ctx||rotOsc)return;if(ctx.state==='suspended')ctx.resume();const sr=ctx.sampleRate;
+  function startRot(){if(!ctx||rotOsc)return;if(ctx.state==='suspended')ctx.resume();
     rotOsc=ctx.createOscillator();rotGain=ctx.createGain();const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=200;
     rotOsc.frequency.value=100;rotOsc.type='sine';rotGain.gain.value=0.03;rotOsc.connect(f);f.connect(rotGain);rotGain.connect(ctx.destination);rotOsc.start();playing=true
   }
   function stopRot(){if(rotOsc){try{rotOsc.stop()}catch(e){}rotOsc.disconnect();rotGain.disconnect();rotOsc=null;rotGain=null;playing=false}}
   function resume(){if(ctx&&ctx.state==='suspended')ctx.resume()}
-  return{init,play,startRot,stopRot,resume};
+
+  // BGM 8秒循环 和风五声音阶
+  function genBGM(){
+    if(!ctx||bgmBuf)return;const sr=ctx.sampleRate,dur=8,len=Math.floor(sr*dur);bgmBuf=ctx.createBuffer(1,len,sr);
+    const d=bgmBuf.getChannelData(0),notes=[262,294,330,392,440];
+    const bpm=80,bl=Math.floor(sr*60/bpm),mel=[0,1,2,1,3,2,1,0,2,3,4,3,2,1,0,0],mel2=[1,0,2,1,1,0,3,2,2,1,4,3,3,2,1,0];
+    for(let i=0;i<len;i++){const t=i/sr;d[i]+=Math.sin(2*Math.PI*55*t)*0.06;d[i]+=Math.sin(2*Math.PI*110*t)*0.04}
+    for(let m=0;m<mel.length;m++){const ns=Math.floor(m*bl*2),ne=Math.min(ns+Math.floor(bl*1.6),len),f=notes[mel[m]];
+      for(let i=ns;i<ne;i++){const t=(i-ns)/sr,e=Math.exp(-t*1.2);d[i]+=Math.sin(2*Math.PI*f*t)*e*0.05+Math.sin(2*Math.PI*f*2*t)*e*0.015}}
+    for(let m=0;m<mel2.length;m+=2){const ns=Math.floor(m*bl),ne=Math.min(ns+Math.floor(bl*1.2),len),f=notes[mel2[m]];
+      for(let i=ns;i<ne;i++){const t=(i-ns)/sr,e=Math.exp(-t*2);d[i]+=Math.sin(2*Math.PI*f*t)*e*0.025}}
+    for(let m=0;m<mel.length;m+=2){const bp=Math.floor(m*bl*2);
+      for(let i=0;i<Math.floor(sr*0.04);i++){if(bp+i<len){const t=i/sr;d[bp+i]+=Math.sin(2*Math.PI*600*t)*Math.exp(-t*80)*0.03+Math.sin(2*Math.PI*900*t)*Math.exp(-t*90)*0.02}}}
+    let mx=0;for(let i=0;i<len;i++)mx=Math.max(mx,Math.abs(d[i]));if(mx>0)for(let i=0;i<len;i++)d[i]/=mx
+  }
+  function startBGM(){
+    if(!ctx||bgmOn)return;genBGM();if(ctx.state==='suspended')ctx.resume();
+    bgmSrc=ctx.createBufferSource();bgmSrc.buffer=bgmBuf;bgmSrc.loop=true;
+    bgmGain=ctx.createGain();bgmGain.gain.value=0.3;
+    bgmSrc.connect(bgmGain);bgmGain.connect(ctx.destination);bgmSrc.start();bgmOn=true
+  }
+  function stopBGM(){if(bgmSrc){try{bgmSrc.stop()}catch(e){}bgmSrc.disconnect();bgmSrc=null;if(bgmGain)bgmGain.disconnect();bgmOn=false}}
+  return{init,play,startRot,stopRot,resume,startBGM,stopBGM};
 })();
 function startGame(){
   let ov=document.getElementById('game-overlay');ov.classList.remove('show');
