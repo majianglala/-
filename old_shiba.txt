@@ -1,0 +1,21 @@
+// 柴犬 56x56
+  mkT('shiba',56,56,(g,s)=>{
+    g.fillStyle(0xe8a850);g.fillRoundedRect(8,20,36,22,10);
+    g.fillStyle(0xfff5e0);g.fillRoundedRect(16,28,20,16,8);
+    g.fillStyle(0xe8a850);g.fillCircle(28,16,14);
+    g.fillStyle(0xc88030);g.fillTriangle(14,14,8,0,20,8);g.fillTriangle(42,14,48,0,36,8);
+    g.fillStyle(0xe8c090);g.fillTriangle(15,12,11,2,19,8);g.fillTriangle(41,12,45,2,37,8);
+    g.fillStyle(0xfff5e0);g.fillEllipse(28,21,20,12);
+    g.fillStyle(0x222222);g.fillCircle(28,18,2.5);
+    g.fillStyle(0x1a1a1a);g.fillCircle(21,13,2.5);g.fillCircle(35,13,2.5);
+    g.fillStyle(0xffffff);g.fillCircle(21.5,12.2,0.8);g.fillCircle(35.5,12.2,0.8);
+    g.lineStyle(1,0x666666,0.5);g.beginPath();g.arc(28,20,4,0.2,Math.PI-0.2,false);g.strokePath();
+    g.lineStyle(4,0xc88030);g.beginPath();g.arc(46,20,10,-1.2,0.8,false);g.strokePath();
+    g.lineStyle(1,0xe8a850);g.beginPath();g.arc(46,20,8,-1.2,0.8,false);g.strokePath();
+    g.lineStyle(2.5,0x888888);g.lineBetween(14,4,14,40);
+    g.lineStyle(3,0x665544);g.lineBetween(8,4,20,4);g.lineBetween(14,0,14,8);
+    g.lineStyle(2.5,0xcccccc);g.lineBetween(14,8,14,36);
+    g.fillStyle(0xd49840);g.fillRoundedRect(8,36,10,8,3);g.fillRoundedRect(38,36,10,8,3);
+    g.fillRoundedRect(12,42,8,6,3);g.fillRoundedRect(36,42,8,6,3);
+  });
+

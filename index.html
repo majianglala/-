@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+FILLER﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -82,25 +82,70 @@ function makeTextures(scene) {
   let g,s;
   function mkT(key,w,h,fn){g=scene.make.graphics({add:false});s={w:w,h:h};fn(g,s);g.generateTexture(key,w,h);g.destroy();}
 
-  // 柴犬 56x56
-  mkT('shiba',56,56,(g,s)=>{
-    g.fillStyle(0xe8a850);g.fillRoundedRect(8,20,36,22,10);
-    g.fillStyle(0xfff5e0);g.fillRoundedRect(16,28,20,16,8);
-    g.fillStyle(0xe8a850);g.fillCircle(28,16,14);
-    g.fillStyle(0xc88030);g.fillTriangle(14,14,8,0,20,8);g.fillTriangle(42,14,48,0,36,8);
-    g.fillStyle(0xe8c090);g.fillTriangle(15,12,11,2,19,8);g.fillTriangle(41,12,45,2,37,8);
-    g.fillStyle(0xfff5e0);g.fillEllipse(28,21,20,12);
-    g.fillStyle(0x222222);g.fillCircle(28,18,2.5);
-    g.fillStyle(0x1a1a1a);g.fillCircle(21,13,2.5);g.fillCircle(35,13,2.5);
-    g.fillStyle(0xffffff);g.fillCircle(21.5,12.2,0.8);g.fillCircle(35.5,12.2,0.8);
-    g.lineStyle(1,0x666666,0.5);g.beginPath();g.arc(28,20,4,0.2,Math.PI-0.2,false);g.strokePath();
-    g.lineStyle(4,0xc88030);g.beginPath();g.arc(46,20,10,-1.2,0.8,false);g.strokePath();
-    g.lineStyle(1,0xe8a850);g.beginPath();g.arc(46,20,8,-1.2,0.8,false);g.strokePath();
-    g.lineStyle(2.5,0x888888);g.lineBetween(14,4,14,40);
-    g.lineStyle(3,0x665544);g.lineBetween(8,4,20,4);g.lineBetween(14,0,14,8);
-    g.lineStyle(2.5,0xcccccc);g.lineBetween(14,8,14,36);
-    g.fillStyle(0xd49840);g.fillRoundedRect(8,36,10,8,3);g.fillRoundedRect(38,36,10,8,3);
-    g.fillRoundedRect(12,42,8,6,3);g.fillRoundedRect(36,42,8,6,3);
+    // 柴犬 64x64 (精细版)
+  mkT('shiba',64,64,(g,s)=>{
+    // === 刀 (背景层) ===
+    g.lineStyle(3.5,0x8B4513);g.beginPath();g.arc(50,16,12,-1.6,0.6,false);g.strokePath();
+    g.lineStyle(2.5,0xA0522D);g.beginPath();g.arc(50,16,10,-1.5,0.5,false);g.strokePath();
+    g.lineStyle(1.5,0x4a4a4a);g.beginPath();g.arc(50,16,9,-1.4,0.4,false);g.strokePath();
+    g.lineStyle(3,0xcccccc);g.beginPath();g.moveTo(49,27);g.lineTo(53,4);g.strokePath();
+    g.lineStyle(2,0xffffff);g.beginPath();g.moveTo(50,26);g.lineTo(53,5);g.strokePath();
+    g.fillStyle(0x8B7355);g.fillRoundedRect(46,24,10,5,2);
+    g.fillStyle(0xA0896B);g.fillRoundedRect(47,25,8,3,1);
+    // === 身体 ===
+    g.fillStyle(0xE8A850);g.fillRoundedRect(10,22,36,26,12);
+    g.fillStyle(0xD4923A);g.fillRoundedRect(12,32,32,14,8);
+    g.fillStyle(0xFFF5E0);g.fillRoundedRect(16,28,22,18,10);
+    // === 头部 ===
+    g.fillStyle(0xE8A850);g.fillCircle(28,16,15);
+    g.fillStyle(0xF0B860);g.fillCircle(22,10,7);
+    g.fillStyle(0xE8A850);g.fillCircle(14,20,7);g.fillCircle(42,20,7);
+    g.fillStyle(0xF5D090);g.fillCircle(16,22,5);g.fillCircle(40,22,5);
+    g.fillStyle(0xFFF5E0);g.fillCircle(15,24,4);g.fillCircle(41,24,4);
+    // === 耳朵 ===
+    g.fillStyle(0xC88030);g.beginPath();g.moveTo(14,4);g.lineTo(4,12);g.lineTo(16,14);g.closePath();g.fillPath();
+    g.fillStyle(0xF0C890);g.beginPath();g.moveTo(13,6);g.lineTo(6,11);g.lineTo(15,12);g.closePath();g.fillPath();
+    g.fillStyle(0xC88030);g.beginPath();g.moveTo(42,4);g.lineTo(52,12);g.lineTo(40,14);g.closePath();g.fillPath();
+    g.fillStyle(0xF0C890);g.beginPath();g.moveTo(43,6);g.lineTo(50,11);g.lineTo(41,12);g.closePath();g.fillPath();
+    // === 面部 ===
+    g.fillStyle(0xFFF5E0);g.fillTriangle(28,4,22,14,34,14);
+    g.fillStyle(0xFFF5E0);g.fillEllipse(28,19,16,10);
+    g.fillStyle(0x222222);g.fillCircle(28,17,3);
+    g.fillStyle(0x444444);g.fillCircle(27,16,1.2);
+    g.lineStyle(1.2,0x666666,0.6);g.beginPath();g.arc(28,19,4,0.2,Math.PI-0.2,false);g.strokePath();
+    g.lineStyle(0.8,0x666666,0.4);g.beginPath();g.moveTo(28,20);g.lineTo(24,22);g.strokePath();
+    g.beginPath();g.moveTo(28,20);g.lineTo(32,22);g.strokePath();
+    g.fillStyle(0xFF6666,0.7);g.fillCircle(28,22,2.5);
+    g.fillStyle(0x888888,0.5);g.fillCircle(22,20,0.8);g.fillCircle(20,21,0.8);
+    g.fillStyle(0x888888,0.5);g.fillCircle(34,20,0.8);g.fillCircle(36,21,0.8);
+    // === 眼睛 ===
+    g.fillStyle(0xFFFFFF);g.fillCircle(22,13,4.2);
+    g.fillStyle(0x1a1a2e);g.fillCircle(22,13,3);
+    g.fillStyle(0xFFFFFF);g.fillCircle(22.8,11.8,1.5);
+    g.fillStyle(0xFFFFFF,0.6);g.fillCircle(21,13.8,0.8);
+    g.fillStyle(0xFFFFFF);g.fillCircle(34,13,4.2);
+    g.fillStyle(0x1a1a2e);g.fillCircle(34,13,3);
+    g.fillStyle(0xFFFFFF);g.fillCircle(34.8,11.8,1.5);
+    g.fillStyle(0xFFFFFF,0.6);g.fillCircle(33,13.8,0.8);
+    g.lineStyle(1.5,0xC88030,0.7);g.beginPath();g.arc(22,9,5,2.8,0.6,false);g.strokePath();
+    g.lineStyle(1.5,0xC88030,0.7);g.beginPath();g.arc(34,9,5,2.8,0.6,false);g.strokePath();
+    // === 腿/爪 ===
+    g.fillStyle(0xE8A850);g.fillRoundedRect(12,42,10,12,5);
+    g.fillStyle(0xFFF5E0);g.fillRoundedRect(12,48,10,6,3);
+    g.fillStyle(0xE8A850);g.fillRoundedRect(34,42,10,12,5);
+    g.fillStyle(0xFFF5E0);g.fillRoundedRect(34,48,10,6,3);
+    g.fillStyle(0xD4923A);g.fillRoundedRect(4,28,8,10,4);
+    g.fillStyle(0xFFF5E0);g.fillRoundedRect(4,34,8,5,3);
+    g.fillStyle(0xD4923A);g.fillRoundedRect(44,28,8,10,4);
+    g.fillStyle(0xFFF5E0);g.fillRoundedRect(44,34,8,5,3);
+    g.fillStyle(0xC88030,0.4);g.fillRoundedRect(2,30,8,6,3);
+    g.fillStyle(0xC88030,0.4);g.fillRoundedRect(46,30,8,6,3);
+    // === 尾巴 ===
+    g.lineStyle(5,0xE8A850);g.beginPath();g.arc(2,42,12,-1.2,1.0,false);g.strokePath();
+    g.lineStyle(3,0xFFF5E0);g.beginPath();g.arc(2,42,10,-0.8,0.6,false);g.strokePath();
+    // === 腮红 ===
+    g.fillStyle(0xFF9999,0.25);g.fillEllipse(16,20,6,3);
+    g.fillStyle(0xFF9999,0.25);g.fillEllipse(40,20,6,3);
   });
 
   // 飞刀 (各等级)
@@ -304,7 +349,7 @@ class GameScene extends Phaser.Scene {
 
     // 玩家
     this.player=this.physics.add.sprite(WORLD_W/2,WORLD_H/2,'shiba');
-    this.player.setCollideWorldBounds(true).setDepth(10).setSize(32,32).setOffset(12,12);
+    this.player.setCollideWorldBounds(true).setDepth(10).setSize(32,32).setOffset(16,16);
     this.cameras.main.startFollow(this.player,true,0.08,0.08);
     SFX.init();SFX.startRot();SFX.startBGM();
     // 方向盘 (左下)
